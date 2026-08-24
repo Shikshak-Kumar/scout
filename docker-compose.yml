@@ -1,0 +1,24 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment: {POSTGRES_USER: scout, POSTGRES_PASSWORD: scout, POSTGRES_DB: scout}
+    volumes: [scout_db:/var/lib/postgresql/data]
+    healthcheck: {test: ["CMD-SHELL", "pg_isready -U scout"], interval: 5s, timeout: 5s, retries: 10}
+  redis: {image: redis:7-alpine}
+  api:
+    build: ./backend
+    env_file: [.env]
+    ports: ["8000:8000"]
+    depends_on: {db: {condition: service_healthy}, redis: {condition: service_started}}
+  worker:
+    build: ./backend
+    command: celery -A app.tasks.celery_app.celery worker -Q ingestion -l info
+    env_file: [.env]
+    depends_on: [api, redis]
+  beat:
+    build: ./backend
+    command: celery -A app.tasks.celery_app.celery beat -l info
+    env_file: [.env]
+    depends_on: [api, redis]
+volumes: {scout_db: {}}
+

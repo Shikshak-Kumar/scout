@@ -1,0 +1,12 @@
+.env
+*.pyc
+__pycache__/
+.pytest_cache/
+.venv/
+backend/uploads/
+mobile/.dart_tool/
+mobile/build/
+mobile/android/key.properties
+mobile/ios/Runner/GoogleService-Info.plist
+mobile/android/app/google-services.json
+
