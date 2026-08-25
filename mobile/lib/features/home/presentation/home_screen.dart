@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/network/api.dart';
 import '../../opportunities/presentation/opportunity.dart';
 
@@ -234,7 +235,9 @@ class _Skeleton extends StatelessWidget {
 }
 
 abstract final class ShellScope {
-  static void goDiscover(BuildContext context) {}
+  static void goDiscover(BuildContext context) {
+    context.go('/discover');
+  }
   static void openOpportunity(BuildContext context, Opportunity item) {
     Navigator.of(
       context,
