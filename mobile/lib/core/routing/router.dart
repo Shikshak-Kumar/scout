@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/home/presentation/home_screen.dart';
+import '../../features/discover/presentation/discover_screen.dart';
+import '../../features/saved/presentation/saved_screen.dart';
+import '../../features/applications/presentation/applications_screen.dart';
+import '../../features/profile/presentation/profile_screen.dart';
 
 final router = GoRouter(
   initialLocation: '/home',
@@ -11,36 +15,19 @@ final router = GoRouter(
         GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
         GoRoute(
           path: '/discover',
-          builder: (context, state) => const _Page(
-            title: 'Discover',
-            icon: Icons.travel_explore,
-            description: 'Search real opportunities across connected sources.',
-          ),
+          builder: (context, state) => const DiscoverScreen(),
         ),
         GoRoute(
           path: '/saved',
-          builder: (context, state) => const _Page(
-            title: 'Saved',
-            icon: Icons.bookmark_outline,
-            description: 'Your saved opportunities will appear here.',
-          ),
+          builder: (context, state) => const SavedScreen(),
         ),
         GoRoute(
           path: '/applications',
-          builder: (context, state) => const _Page(
-            title: 'Applications',
-            icon: Icons.work_outline,
-            description: 'Track applications and upcoming deadlines.',
-          ),
+          builder: (context, state) => const ApplicationsScreen(),
         ),
         GoRoute(
           path: '/profile',
-          builder: (context, state) => const _Page(
-            title: 'Profile',
-            icon: Icons.person_outline,
-            description:
-                'Tune your skills, interests, and notification preferences.',
-          ),
+          builder: (context, state) => const ProfileScreen(),
         ),
       ],
     ),
@@ -92,39 +79,6 @@ class _Shell extends StatelessWidget {
           label: 'Profile',
         ),
       ],
-    ),
-  );
-}
-
-class _Page extends StatelessWidget {
-  final String title, description;
-  final IconData icon;
-  const _Page({
-    required this.title,
-    required this.icon,
-    required this.description,
-  });
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
-    ),
-    body: Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 64, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(height: 18),
-            Text(
-              description,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ],
-        ),
-      ),
     ),
   );
 }
