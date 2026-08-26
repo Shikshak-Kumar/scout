@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_appauth/flutter_appauth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'keycloak_web.dart';
 
 const storage = FlutterSecureStorage();
 const _appAuth = FlutterAppAuth();
@@ -33,14 +34,21 @@ class AuthNotifier extends StateNotifier<bool> {
   }
 
   Future<void> _restoreSession() async {
+    if (kIsWeb) {
+      final tokens = await handleKeycloakWebCallback();
+      if (tokens != null) {
+        await _storeTokens(tokens);
+        state = true;
+        return;
+      }
+    }
     state = await storage.containsKey(key: 'access_token');
   }
 
   Future<void> loginWithGoogle() async {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'Flutter AppAuth is a native plugin. Run Scout on the Android device, not Chrome.',
-      );
+      await startKeycloakWebLogin();
+      return;
     }
 
     final result = await _appAuth.authorizeAndExchangeCode(
@@ -68,6 +76,13 @@ class AuthNotifier extends StateNotifier<bool> {
     final refreshToken = await storage.read(key: 'refresh_token');
     if (refreshToken == null || refreshToken.isEmpty) return false;
     try {
+      if (kIsWeb) {
+        final tokens = await refreshKeycloakWebToken(refreshToken);
+        if (tokens == null) return false;
+        await _storeTokens(tokens, fallbackRefreshToken: refreshToken);
+        state = true;
+        return true;
+      }
       final result = await _appAuth.token(
         TokenRequest(
           _clientId,
@@ -97,5 +112,17 @@ class AuthNotifier extends StateNotifier<bool> {
   Future<void> logout() async {
     await storage.deleteAll();
     state = false;
+  }
+
+  Future<void> _storeTokens(
+    Map<String, String> tokens, {
+    String? fallbackRefreshToken,
+  }) async {
+    await storage.write(key: 'access_token', value: tokens['access_token']);
+    await storage.write(
+      key: 'refresh_token',
+      value: tokens['refresh_token'] ?? fallbackRefreshToken,
+    );
+    await storage.write(key: 'id_token', value: tokens['id_token']);
   }
 }
