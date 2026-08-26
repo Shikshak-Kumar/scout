@@ -1,14 +1,27 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_appauth/flutter_appauth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 const storage = FlutterSecureStorage();
-final appAuth = FlutterAppAuth();
+const _appAuth = FlutterAppAuth();
 
-const String _clientId = 'scout-mobile';
-const String _redirectUrl = 'com.scoutapp.scout_mobile://oauth2redirect';
-const String _issuer = 'http://localhost:8080/realms/scout';
-const String _discoveryUrl = '$_issuer/.well-known/openid-configuration';
+const _clientId = String.fromEnvironment(
+  'KEYCLOAK_CLIENT_ID',
+  defaultValue: 'scout-mobile',
+);
+const _issuer = String.fromEnvironment(
+  'KEYCLOAK_ISSUER',
+  defaultValue: 'http://localhost:8080/realms/scout',
+);
+const _redirectUrl = 'scout://oauthredirect';
+const _scopes = ['openid', 'profile', 'email', 'offline_access'];
+
+const _serviceConfiguration = AuthorizationServiceConfiguration(
+  authorizationEndpoint: '$_issuer/protocol/openid-connect/auth',
+  tokenEndpoint: '$_issuer/protocol/openid-connect/token',
+  endSessionEndpoint: '$_issuer/protocol/openid-connect/logout',
+);
 
 final authStateProvider = StateNotifierProvider<AuthNotifier, bool>((ref) {
   return AuthNotifier();
@@ -16,73 +29,69 @@ final authStateProvider = StateNotifierProvider<AuthNotifier, bool>((ref) {
 
 class AuthNotifier extends StateNotifier<bool> {
   AuthNotifier() : super(false) {
-    _checkToken();
+    _restoreSession();
   }
 
-  Future<void> _checkToken() async {
-    final token = await storage.read(key: 'access_token');
-    if (token != null) {
-      state = true;
-    }
+  Future<void> _restoreSession() async {
+    state = await storage.containsKey(key: 'access_token');
   }
 
   Future<void> loginWithGoogle() async {
-    try {
-      final AuthorizationTokenResponse result = await appAuth
-          .authorizeAndExchangeCode(
-            AuthorizationTokenRequest(
-              _clientId,
-              _redirectUrl,
-              discoveryUrl: _discoveryUrl,
-              scopes: ['openid', 'profile', 'email', 'offline_access'],
-              promptValues: ['login'],
-              additionalParameters: {'kc_idp_hint': 'google'},
-            ),
-          );
-
-      if (result.accessToken != null) {
-        await storage.write(key: 'access_token', value: result.accessToken);
-        if (result.refreshToken != null) {
-          await storage.write(key: 'refresh_token', value: result.refreshToken);
-        }
-        state = true;
-      }
-    } catch (e) {
-      // Handle login error (e.g., cancelled by user)
-      state = false;
-      rethrow;
+    if (kIsWeb) {
+      throw UnsupportedError(
+        'Flutter AppAuth is a native plugin. Run Scout on the Android device, not Chrome.',
+      );
     }
+
+    final result = await _appAuth.authorizeAndExchangeCode(
+      AuthorizationTokenRequest(
+        _clientId,
+        _redirectUrl,
+        serviceConfiguration: _serviceConfiguration,
+        scopes: _scopes,
+        additionalParameters: const {'kc_idp_hint': 'google'},
+        allowInsecureConnections: true,
+      ),
+    );
+
+    final accessToken = result.accessToken;
+    if (accessToken == null || accessToken.isEmpty) {
+      throw StateError('Keycloak did not return an access token.');
+    }
+    await storage.write(key: 'access_token', value: accessToken);
+    await storage.write(key: 'refresh_token', value: result.refreshToken);
+    await storage.write(key: 'id_token', value: result.idToken);
+    state = true;
   }
 
   Future<bool> refreshToken() async {
     final refreshToken = await storage.read(key: 'refresh_token');
-    if (refreshToken == null) {
-      return false;
-    }
-
+    if (refreshToken == null || refreshToken.isEmpty) return false;
     try {
-      final TokenResponse result = await appAuth.token(
+      final result = await _appAuth.token(
         TokenRequest(
           _clientId,
           _redirectUrl,
-          discoveryUrl: _discoveryUrl,
           refreshToken: refreshToken,
-          scopes: ['openid', 'profile', 'email', 'offline_access'],
+          serviceConfiguration: _serviceConfiguration,
+          scopes: _scopes,
+          allowInsecureConnections: true,
         ),
       );
-
-      if (result.accessToken != null) {
-        await storage.write(key: 'access_token', value: result.accessToken);
-        if (result.refreshToken != null) {
-          await storage.write(key: 'refresh_token', value: result.refreshToken);
-        }
-        state = true;
-        return true;
-      }
-    } catch (e) {
+      final accessToken = result.accessToken;
+      if (accessToken == null || accessToken.isEmpty) return false;
+      await storage.write(key: 'access_token', value: accessToken);
+      await storage.write(
+        key: 'refresh_token',
+        value: result.refreshToken ?? refreshToken,
+      );
+      await storage.write(key: 'id_token', value: result.idToken);
+      state = true;
+      return true;
+    } catch (_) {
       await logout();
+      return false;
     }
-    return false;
   }
 
   Future<void> logout() async {

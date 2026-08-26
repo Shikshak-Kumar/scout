@@ -28,6 +28,11 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // Consumed by flutter_appauth's merged manifest RedirectUriReceiverActivity.
+        manifestPlaceholders += mapOf(
+            "appAuthRedirectScheme" to "scout"
+        )
     }
 
     buildTypes {
