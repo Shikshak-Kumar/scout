@@ -3,8 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:scout_mobile/core/theme/theme.dart';
 
 void main() {
-  test('theme uses Material 3', () {
+  test('themes use the unified Material 3 palette', () {
     expect(ScoutTheme.light.useMaterial3, isTrue);
-    expect(ScoutTheme.dark.brightness, Brightness.dark);
+    expect(ScoutTheme.dark.useMaterial3, isTrue);
+    expect(ScoutTheme.dark.brightness, Brightness.light);
   });
 }

@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../features/opportunities/presentation/opportunity.dart';
 import '../auth/auth_service.dart';
 
@@ -25,7 +24,9 @@ final dioProvider = Provider<Dio>((ref) {
       },
       onError: (error, handler) async {
         if (error.response?.statusCode == 401) {
-          final refreshed = await ref.read(authStateProvider.notifier).refreshToken();
+          final refreshed = await ref
+              .read(authStateProvider.notifier)
+              .refreshToken();
           if (refreshed) {
             // Retry the request with the new token
             final token = await storage.read(key: 'access_token');
@@ -55,7 +56,9 @@ final dioProvider = Provider<Dio>((ref) {
 final discoverSearchQueryProvider = StateProvider<String>((ref) => '');
 final discoverCategoryProvider = StateProvider<String>((ref) => 'All');
 
-final discoverFeedProvider = FutureProvider.autoDispose<List<Opportunity>>((ref) async {
+final discoverFeedProvider = FutureProvider.autoDispose<List<Opportunity>>((
+  ref,
+) async {
   final query = ref.watch(discoverSearchQueryProvider);
   final category = ref.watch(discoverCategoryProvider);
   final dio = ref.watch(dioProvider);
@@ -71,16 +74,20 @@ final discoverFeedProvider = FutureProvider.autoDispose<List<Opportunity>>((ref)
 });
 
 // Saved opportunities provider
-final savedFeedProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
-  final response = await ref.watch(dioProvider).get('/opportunities/saved');
-  return List<Map<String, dynamic>>.from(response.data);
-});
+final savedFeedProvider =
+    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+      final response = await ref.watch(dioProvider).get('/opportunities/saved');
+      return List<Map<String, dynamic>>.from(response.data);
+    });
 
 // Tracked applications provider
-final applicationsFeedProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
-  final response = await ref.watch(dioProvider).get('/opportunities/applications');
-  return List<Map<String, dynamic>>.from(response.data);
-});
+final applicationsFeedProvider =
+    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+      final response = await ref
+          .watch(dioProvider)
+          .get('/opportunities/applications');
+      return List<Map<String, dynamic>>.from(response.data);
+    });
 
 // Profile provider and notifier
 class ProfileNotifier extends StateNotifier<AsyncValue<Map<String, dynamic>>> {
@@ -101,10 +108,9 @@ class ProfileNotifier extends StateNotifier<AsyncValue<Map<String, dynamic>>> {
 
   Future<void> updateProfile(Map<String, dynamic> profile) async {
     try {
-      final response = await ref.read(dioProvider).patch(
-        '/auth/me',
-        data: {'profile': profile},
-      );
+      final response = await ref
+          .read(dioProvider)
+          .patch('/auth/me', data: {'profile': profile});
       state = AsyncValue.data(response.data as Map<String, dynamic>);
     } catch (e) {
       // Keep existing state
@@ -112,9 +118,13 @@ class ProfileNotifier extends StateNotifier<AsyncValue<Map<String, dynamic>>> {
   }
 }
 
-final profileProvider = StateNotifierProvider.autoDispose<ProfileNotifier, AsyncValue<Map<String, dynamic>>>((ref) {
-  return ProfileNotifier(ref);
-});
+final profileProvider =
+    StateNotifierProvider.autoDispose<
+      ProfileNotifier,
+      AsyncValue<Map<String, dynamic>>
+    >((ref) {
+      return ProfileNotifier(ref);
+    });
 
 // Opportunity Service for saved / application modifications
 final opportunityServiceProvider = Provider((ref) => OpportunityService(ref));

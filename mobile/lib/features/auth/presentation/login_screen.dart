@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/auth/auth_service.dart';
+import '../../../core/auth/auth_service.dart';
 
 class LoginScreen extends ConsumerWidget {
   const LoginScreen({super.key});
@@ -8,7 +8,7 @@ class LoginScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final isAuthenticating = ref.watch(authStateProvider); // Optional: add loading state
+    ref.watch(authStateProvider);
 
     return Scaffold(
       body: Stack(
@@ -33,7 +33,7 @@ class LoginScreen extends ConsumerWidget {
               ),
             ),
           ),
-          
+
           SafeArea(
             child: Center(
               child: Padding(
@@ -58,7 +58,11 @@ class LoginScreen extends ConsumerWidget {
                       ),
                       child: Column(
                         children: [
-                          const Icon(Icons.radar, size: 64, color: Color(0xFFE08BB4)),
+                          const Icon(
+                            Icons.radar,
+                            size: 64,
+                            color: Color(0xFFE08BB4),
+                          ),
                           const SizedBox(height: 16),
                           Text(
                             'Scout',
@@ -76,14 +80,16 @@ class LoginScreen extends ConsumerWidget {
                             ),
                           ),
                           const SizedBox(height: 48),
-                          
+
                           SizedBox(
                             width: double.infinity,
                             child: FilledButton.icon(
                               style: FilledButton.styleFrom(
                                 backgroundColor: const Color(0xFFF5B5D0),
                                 foregroundColor: const Color(0xFF1E1E24),
-                                padding: const EdgeInsets.symmetric(vertical: 20),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 20,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(50),
                                 ),
@@ -91,11 +97,17 @@ class LoginScreen extends ConsumerWidget {
                               ),
                               onPressed: () async {
                                 try {
-                                  await ref.read(authStateProvider.notifier).loginWithGoogle();
+                                  await ref
+                                      .read(authStateProvider.notifier)
+                                      .loginWithGoogle();
                                 } catch (e) {
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Login failed: ${e.toString()}')),
+                                      SnackBar(
+                                        content: Text(
+                                          'Login failed: ${e.toString()}',
+                                        ),
+                                      ),
                                     );
                                   }
                                 }
@@ -117,10 +129,7 @@ class LoginScreen extends ConsumerWidget {
                     const Text(
                       'By continuing, you agree to our Terms of Service\nand Privacy Policy.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF75747C),
-                      ),
+                      style: TextStyle(fontSize: 12, color: Color(0xFF75747C)),
                     ),
                     const SizedBox(height: 24),
                   ],
