@@ -17,6 +17,6 @@ class ScoutApp extends ConsumerWidget {
     theme: ScoutTheme.light,
     darkTheme: ScoutTheme.dark,
     themeMode: ThemeMode.system,
-    routerConfig: router,
+    routerConfig: ref.watch(routerProvider),
   );
 }

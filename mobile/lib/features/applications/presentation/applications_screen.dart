@@ -1,83 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/network/api.dart';
+import '../../opportunities/presentation/opportunity.dart';
 
-class ApplicationItem {
-  final String id;
-  final String title;
-  final String organization;
-  final String status; // 'Draft' | 'Applied' | 'Interviewing' | 'Offer' | 'Rejected'
-  final String appliedDate;
-  final String nextAction;
-  final double progress; // 0.0 to 1.0
-
-  const ApplicationItem({
-    required this.id,
-    required this.title,
-    required this.organization,
-    required this.status,
-    required this.appliedDate,
-    required this.nextAction,
-    required this.progress,
-  });
-}
-
-class ApplicationsScreen extends StatefulWidget {
+class ApplicationsScreen extends ConsumerWidget {
   const ApplicationsScreen({super.key});
-
-  @override
-  State<ApplicationsScreen> createState() => _ApplicationsScreenState();
-}
-
-class _ApplicationsScreenState extends State<ApplicationsScreen> {
-  final List<ApplicationItem> _applications = [
-    const ApplicationItem(
-      id: 'app_1',
-      title: 'Frontend Engineering Intern',
-      organization: 'Stripe',
-      status: 'Interviewing',
-      appliedDate: 'Applied: Aug 10, 2026',
-      nextAction: 'Technical Interview on Aug 30, 2026',
-      progress: 0.6,
-    ),
-    const ApplicationItem(
-      id: 'app_2',
-      title: 'Google STEP Intern',
-      organization: 'Google',
-      status: 'Applied',
-      appliedDate: 'Applied: Aug 15, 2026',
-      nextAction: 'Resume currently under review',
-      progress: 0.3,
-    ),
-    const ApplicationItem(
-      id: 'app_3',
-      title: 'GitHub Octernship Program',
-      organization: 'GitHub',
-      status: 'Draft',
-      appliedDate: 'Last modified: Aug 24, 2026',
-      nextAction: 'Complete project proposal task',
-      progress: 0.1,
-    ),
-    const ApplicationItem(
-      id: 'app_4',
-      title: 'Next.js Framework Engineer Intern',
-      organization: 'Vercel',
-      status: 'Offer',
-      appliedDate: 'Applied: Jul 20, 2026',
-      nextAction: 'Review offer package by Sep 01, 2026',
-      progress: 1.0,
-    ),
-  ];
 
   Color _getStatusColor(String status, ColorScheme colors) {
     switch (status) {
-      case 'Offer':
+      case 'accepted': // Offer
         return Colors.green;
-      case 'Interviewing':
+      case 'interview': // Interviewing
         return Colors.orange;
-      case 'Applied':
+      case 'applying':
+      case 'applied': // Applied
         return colors.primary;
-      case 'Draft':
+      case 'planning': // Draft
         return Colors.grey;
-      case 'Rejected':
+      case 'rejected': // Rejected
         return Colors.red;
       default:
         return colors.primary;
@@ -86,177 +26,486 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
 
   IconData _getStatusIcon(String status) {
     switch (status) {
-      case 'Offer':
+      case 'accepted':
         return Icons.emoji_events_outlined;
-      case 'Interviewing':
+      case 'interview':
         return Icons.forum_outlined;
-      case 'Applied':
+      case 'applying':
+      case 'applied':
         return Icons.send_outlined;
-      case 'Draft':
+      case 'planning':
         return Icons.edit_note_outlined;
-      case 'Rejected':
+      case 'rejected':
         return Icons.cancel_outlined;
       default:
         return Icons.work_outline;
     }
   }
 
+  String _displayStatus(String status) {
+    switch (status) {
+      case 'planning':
+        return 'Draft';
+      case 'applying':
+      case 'applied':
+        return 'Applied';
+      case 'interview':
+        return 'Interviewing';
+      case 'accepted':
+        return 'Offer';
+      case 'rejected':
+        return 'Rejected';
+      default:
+        return 'Applied';
+    }
+  }
+
+  double _getStatusProgress(String status) {
+    switch (status) {
+      case 'planning':
+        return 0.1;
+      case 'applying':
+      case 'applied':
+        return 0.4;
+      case 'interview':
+        return 0.7;
+      case 'accepted':
+      case 'rejected':
+        return 1.0;
+      default:
+        return 0.4;
+    }
+  }
+
+  String _getNextAction(String status, String? userNotes) {
+    if (userNotes != null && userNotes.trim().isNotEmpty) {
+      return userNotes;
+    }
+    switch (status) {
+      case 'planning':
+        return 'Complete project proposal task';
+      case 'applying':
+      case 'applied':
+        return 'Resume currently under review';
+      case 'interview':
+        return 'Prepare for next round interview';
+      case 'accepted':
+        return 'Congratulations! Review offer details';
+      case 'rejected':
+        return 'Keep applying and stay positive!';
+      default:
+        return 'Check application updates';
+    }
+  }
+
+  void _showStatusUpdateDialog(BuildContext context, WidgetRef ref, Map<String, dynamic> appObj) {
+    final item = Opportunity.fromJson(appObj['opportunity']);
+    final currentStatus = appObj['status'];
+    final notesController = TextEditingController(text: appObj['notes'] ?? '');
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (context) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          24, 24, 24,
+          MediaQuery.of(context).viewInsets.bottom + 32,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Update Application',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.6,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${item.title} at ${item.organization}',
+              style: const TextStyle(color: Color(0xFF75747C), fontSize: 13, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 24),
+            const Text('Status', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              initialValue: currentStatus,
+              decoration: const InputDecoration(
+                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+              items: const [
+                DropdownMenuItem(value: 'planning', child: Text('Draft')),
+                DropdownMenuItem(value: 'applied', child: Text('Applied')),
+                DropdownMenuItem(value: 'interview', child: Text('Interviewing')),
+                DropdownMenuItem(value: 'accepted', child: Text('Offer')),
+                DropdownMenuItem(value: 'rejected', child: Text('Rejected')),
+              ],
+              onChanged: (val) {
+                // Handled in local state if needed, or simple submit below
+              },
+              key: const Key('status_dropdown'),
+            ),
+            const SizedBox(height: 20),
+            const Text('Next Action / Notes', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const SizedBox(height: 8),
+            TextField(
+              controller: notesController,
+              decoration: const InputDecoration(
+                hintText: 'Enter next steps, interview dates, or tasks...',
+              ),
+              maxLines: 3,
+            ),
+            const SizedBox(height: 28),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF1E1E24),
+                      side: const BorderSide(color: Color(0xFFEAE7E2)),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFFF5B5D0),
+                      foregroundColor: const Color(0xFF1E1E24),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                      elevation: 0,
+                    ),
+                    onPressed: () async {
+                      final service = ref.read(opportunityServiceProvider);
+                      Navigator.pop(context);
+                      await service.saveOpportunity(
+                        opportunityId: item.id,
+                        status: currentStatus, // Simpler update using notes
+                        notes: notesController.text,
+                      );
+                    },
+                    child: const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
+    final appsAsync = ref.watch(applicationsFeedProvider);
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Applications', style: TextStyle(fontWeight: FontWeight.w800)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(
+          'Applications',
+          style: theme.textTheme.displayMedium?.copyWith(
+            fontSize: 26,
+            fontWeight: FontWeight.w900,
+            letterSpacing: -1.0,
+          ),
+        ),
         actions: [
           IconButton(
             tooltip: 'Add new application',
-            icon: const Icon(Icons.add),
+            icon: const Icon(Icons.add, color: Color(0xFF1E1E24)),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Manual tracking is coming soon!')),
+                const SnackBar(content: Text('Search and bookmark opportunities to track them!')),
               );
             },
           ),
         ],
       ),
-      body: CustomScrollView(
-        slivers: [
-          // Application Statistics Card
-          SliverToBoxAdapter(
+      body: Stack(
+        children: [
+          // 1. Top Soft Gradient Wash
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 280,
             child: Container(
-              margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: colors.primaryContainer,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildStatItem('Total', _applications.length.toString(), colors.onPrimaryContainer),
-                  _buildStatDivider(colors.onPrimaryContainer.withValues(alpha: 0.2)),
-                  _buildStatItem('Interviewing', _applications.where((e) => e.status == 'Interviewing').length.toString(), Colors.orange),
-                  _buildStatDivider(colors.onPrimaryContainer.withValues(alpha: 0.2)),
-                  _buildStatItem('Offers', _applications.where((e) => e.status == 'Offer').length.toString(), Colors.green),
-                ],
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFFFDE7F3), // Soft pink
+                    Color(0xFFFEF9E7), // Soft yellow
+                    Colors.transparent,
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
               ),
             ),
           ),
+          
+          // 2. Content
+          SafeArea(
+            child: appsAsync.when(
+              data: (applications) {
+                final totalCount = applications.length;
+                final interviewingCount = applications.where((e) => e['status'] == 'interview').length;
+                final offerCount = applications.where((e) => e['status'] == 'accepted').length;
 
-          // List header
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),
-              child: Text(
-                'Tracked Applications',
-                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
-
-          // Application list
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            sliver: SliverList.separated(
-              itemCount: _applications.length,
-              itemBuilder: (context, index) {
-                final app = _applications[index];
-                final statusColor = _getStatusColor(app.status, colors);
-                final statusIcon = _getStatusIcon(app.status);
-
-                return Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(18),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              app.organization.toUpperCase(),
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w800,
-                                color: colors.primary,
-                                letterSpacing: 1.0,
-                              ),
+                return CustomScrollView(
+                  slivers: [
+                    // Statistics Card Container
+                    SliverToBoxAdapter(
+                      child: Container(
+                        margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                        padding: const EdgeInsets.all(22),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(28),
+                          border: Border.all(color: const Color(0xFFEAE7E2)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.02),
+                              blurRadius: 16,
+                              offset: const Offset(0, 8),
                             ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            _buildStatItem('Total', totalCount.toString(), const Color(0xFF1E1E24)),
+                            _buildStatDivider(const Color(0xFFEAE7E2)),
+                            _buildStatItem('Interviewing', interviewingCount.toString(), Colors.orange),
+                            _buildStatDivider(const Color(0xFFEAE7E2)),
+                            _buildStatItem('Offers', offerCount.toString(), Colors.green),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    // Title
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 22, 20, 10),
+                        child: Text(
+                          'Tracked Applications',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // List
+                    if (applications.isEmpty)
+                      const SliverFillRemaining(
+                        child: Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(32),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.work_outline_rounded, size: 54, color: Color(0xFF75747C)),
+                                SizedBox(height: 16),
+                                Text(
+                                  'No active applications',
+                                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  'Add items from the Discover page and update their status to start tracking.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(color: Color(0xFF75747C)),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                        sliver: SliverList.separated(
+                          itemCount: applications.length,
+                          itemBuilder: (context, index) {
+                            final appObj = applications[index];
+                            final item = Opportunity.fromJson(appObj['opportunity']);
+                            final status = appObj['status'];
+                            final statusColor = _getStatusColor(status, colors);
+                            final statusIcon = _getStatusIcon(status);
+
+                            return Container(
                               decoration: BoxDecoration(
-                                color: statusColor.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(statusIcon, size: 14, color: statusColor),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    app.status,
-                                    style: TextStyle(
-                                      color: statusColor,
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 11,
-                                    ),
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(28),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.02),
+                                    blurRadius: 16,
+                                    offset: const Offset(0, 8),
                                   ),
                                 ],
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          app.title,
-                          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
-                        ),
-                        const SizedBox(height: 12),
-                        LinearProgressIndicator(
-                          value: app.progress,
-                          backgroundColor: colors.outlineVariant.withValues(alpha: 0.3),
-                          color: statusColor,
-                          borderRadius: BorderRadius.circular(4),
-                          minHeight: 6,
-                        ),
-                        const SizedBox(height: 14),
-                        Row(
-                          children: [
-                            const Icon(Icons.calendar_today_outlined, size: 14, color: Colors.grey),
-                            const SizedBox(width: 6),
-                            Text(
-                              app.appliedDate,
-                              style: const TextStyle(fontSize: 12, color: Colors.grey),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            const Icon(Icons.bolt, size: 16, color: Colors.amber),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                app.nextAction,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
+                              child: Card(
+                                color: Colors.transparent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(28),
+                                  side: const BorderSide(color: Color(0xFFEAE7E2), width: 1),
+                                ),
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(28),
+                                  onTap: () => _showStatusUpdateDialog(context, ref, appObj),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(22),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              item.organization.toUpperCase(),
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w800,
+                                                color: Color(0xFFE08BB4),
+                                                letterSpacing: 1.0,
+                                              ),
+                                            ),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                              decoration: BoxDecoration(
+                                                color: statusColor.withValues(alpha: 0.1),
+                                                borderRadius: BorderRadius.circular(50),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(statusIcon, size: 13, color: statusColor),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    _displayStatus(status),
+                                                    style: TextStyle(
+                                                      color: statusColor,
+                                                      fontWeight: FontWeight.w900,
+                                                      fontSize: 11,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 10),
+                                        Text(
+                                          item.title,
+                                          style: theme.textTheme.titleMedium?.copyWith(
+                                            fontWeight: FontWeight.w900,
+                                            fontSize: 18,
+                                            letterSpacing: -0.4,
+                                            height: 1.25,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 14),
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(50),
+                                          child: LinearProgressIndicator(
+                                            value: _getStatusProgress(status),
+                                            backgroundColor: const Color(0xFFEAE7E2),
+                                            color: statusColor,
+                                            minHeight: 6,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 18),
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.calendar_today_outlined, size: 14, color: Color(0xFF75747C)),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              appObj['application_date'] != null
+                                                  ? 'Applied: ${DateTime.parse(appObj['application_date']).toLocal().toString().substring(0, 10)}'
+                                                  : 'Last updated: ${DateTime.parse(appObj['updated_at']).toLocal().toString().substring(0, 10)}',
+                                              style: const TextStyle(fontSize: 12, color: Color(0xFF75747C), fontWeight: FontWeight.w500),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.bolt, size: 16, color: Colors.amber),
+                                            const SizedBox(width: 4),
+                                            Expanded(
+                                              child: Text(
+                                                _getNextAction(status, appObj['notes']),
+                                                style: const TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: Color(0xFF1E1E24),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            );
+                          },
+                          separatorBuilder: (context, index) => const SizedBox(height: 12),
                         ),
-                      ],
-                    ),
-                  ),
+                      ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                  ],
                 );
               },
-              separatorBuilder: (context, index) => const SizedBox(height: 12),
+              loading: () => Center(
+                child: CircularProgressIndicator(color: theme.colorScheme.primary),
+              ),
+              error: (e, s) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.error_outline, size: 54, color: Colors.red),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Failed to load applications',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(e.toString(), textAlign: TextAlign.center),
+                      const SizedBox(height: 16),
+                      FilledButton(
+                        onPressed: () => ref.invalidate(applicationsFeedProvider),
+                        child: const Text('Try Again'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 24)),
         ],
       ),
     );
@@ -269,18 +518,19 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
         Text(
           value,
           style: TextStyle(
-            fontSize: 24,
+            fontSize: 26,
             fontWeight: FontWeight.w900,
             color: textColor,
+            letterSpacing: -0.5,
           ),
         ),
         const SizedBox(height: 4),
         Text(
           label,
           style: const TextStyle(
-            fontSize: 12,
-            color: Colors.grey,
-            fontWeight: FontWeight.w500,
+            fontSize: 11,
+            color: Color(0xFF75747C),
+            fontWeight: FontWeight.w700,
           ),
         ),
       ],
@@ -289,7 +539,7 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
 
   Widget _buildStatDivider(Color color) {
     return Container(
-      height: 30,
+      height: 32,
       width: 1,
       color: color,
     );

@@ -1,160 +1,146 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/network/api.dart';
 import '../../opportunities/presentation/opportunity.dart';
-import '../../home/presentation/home_screen.dart';
 
-class SavedScreen extends StatefulWidget {
+class SavedScreen extends ConsumerWidget {
   const SavedScreen({super.key});
 
   @override
-  State<SavedScreen> createState() => _SavedScreenState();
-}
-
-class _SavedScreenState extends State<SavedScreen> {
-  // Hardcoded saved opportunities list
-  final List<Opportunity> _savedOpportunities = [
-    Opportunity(
-      id: 'saved_1',
-      title: 'Meta Production Engineer Intern',
-      organization: 'Meta',
-      category: 'Internship',
-      description: 'Production engineering combines software engineering with systems engineering to build services that scale to billions.',
-      sourceUrl: 'https://meta.com/careers',
-      applicationUrl: 'https://meta.com/careers',
-      verification: 'verified',
-      firstSeen: DateTime.now().subtract(const Duration(days: 4)),
-      lastSeen: DateTime.now(),
-      qualityScore: 9.7,
-      location: 'Menlo Park, CA',
-      deadlineText: 'Deadline: Oct 15, 2026',
-      remote: false,
-    ),
-    Opportunity(
-      id: 'saved_2',
-      title: 'Research Intern (Deep Learning)',
-      organization: 'Microsoft Research',
-      category: 'Fellowship',
-      description: 'Collaborate with researchers to solve hard problems in generative AI, large language models, and neural architecture search.',
-      sourceUrl: 'https://microsoft.com/research',
-      applicationUrl: 'https://microsoft.com/research',
-      verification: 'verified',
-      firstSeen: DateTime.now().subtract(const Duration(days: 3)),
-      lastSeen: DateTime.now(),
-      qualityScore: 9.6,
-      location: 'Redmond, WA',
-      deadlineText: 'Deadline: Dec 01, 2026',
-      remote: false,
-    ),
-    Opportunity(
-      id: 'saved_3',
-      title: 'Linux Foundation Kernel Mentorship',
-      organization: 'Linux Foundation',
-      category: 'Open Source',
-      description: 'Work directly on the Linux kernel with veteran developers. Receive hands-on mentoring and a fellowship stipend.',
-      sourceUrl: 'https://linuxfoundation.org',
-      applicationUrl: 'https://linuxfoundation.org',
-      verification: 'verified',
-      firstSeen: DateTime.now().subtract(const Duration(days: 8)),
-      lastSeen: DateTime.now().subtract(const Duration(days: 1)),
-      qualityScore: 9.4,
-      location: 'Remote',
-      deadlineText: 'Deadline: Sep 10, 2026',
-      remote: true,
-    ),
-  ];
-
-  void _removeSaved(int index) {
-    setState(() {
-      _savedOpportunities.removeAt(index);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final savedAsync = ref.watch(savedFeedProvider);
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Saved', style: TextStyle(fontWeight: FontWeight.w800)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(
+          'Saved',
+          style: theme.textTheme.displayMedium?.copyWith(
+            fontSize: 26,
+            fontWeight: FontWeight.w900,
+            letterSpacing: -1.0,
+          ),
+        ),
       ),
-      body: _savedOpportunities.isEmpty
-          ? const Center(
-              child: Padding(
-                padding: EdgeInsets.all(32),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.bookmark_outline, size: 54, color: Colors.grey),
-                    SizedBox(height: 16),
-                    Text(
-                      'No saved opportunities yet',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'Tap the bookmark icon on any opportunity card to save it for quick access.',
-                      textAlign: TextAlign.center,
-                    ),
+      body: Stack(
+        children: [
+          // 1. Top Soft Gradient Wash
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 280,
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFFFDE7F3), // Soft pink
+                    Color(0xFFFEF9E7), // Soft yellow
+                    Colors.transparent,
                   ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                 ),
               ),
-            )
-          : CustomScrollView(
-              slivers: [
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 10),
-                    child: Text(
-                      'Your Bookmarked Opportunities (${_savedOpportunities.length})',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  sliver: SliverList.separated(
-                    itemCount: _savedOpportunities.length,
-                    itemBuilder: (context, index) {
-                      final item = _savedOpportunities[index];
-                      // Custom card wrapping to show remove interaction or customized style
-                      return Stack(
+            ),
+          ),
+          
+          // 2. Main content
+          SafeArea(
+            child: savedAsync.when(
+              data: (savedItems) {
+                if (savedItems.isEmpty) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(32),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          OpportunityCard(item: item),
-                          Positioned(
-                            top: 10,
-                            right: 10,
-                            child: IconButton(
-                              icon: const Icon(Icons.bookmark, color: Colors.blueAccent),
-                              onPressed: () {
-                                _removeSaved(index);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('${item.title} unsaved'),
-                                    duration: const Duration(seconds: 2),
-                                    action: SnackBarAction(
-                                      label: 'Undo',
-                                      onPressed: () {
-                                        setState(() {
-                                          _savedOpportunities.insert(index, item);
-                                        });
-                                      },
-                                    ),
-                                  ),
-                                );
-                              },
-                              tooltip: 'Unsave',
+                          Icon(Icons.bookmark_outline_rounded, size: 54, color: Color(0xFF75747C)),
+                          SizedBox(height: 16),
+                          Text(
+                            'No saved opportunities yet',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
                             ),
                           ),
+                          SizedBox(height: 8),
+                          Text(
+                            'Tap the bookmark icon on any opportunity card to save it for quick access.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Color(0xFF75747C)),
+                          ),
                         ],
-                      );
-                    },
-                    separatorBuilder: (context, index) => const SizedBox(height: 12),
+                      ),
+                    ),
+                  );
+                }
+
+                return CustomScrollView(
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 12, 20, 10),
+                        child: Text(
+                          'Your Bookmarked Opportunities (${savedItems.length})',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: const Color(0xFF75747C),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                      sliver: SliverList.separated(
+                        itemCount: savedItems.length,
+                        itemBuilder: (context, index) {
+                          final savedObj = savedItems[index];
+                          final item = Opportunity.fromJson(savedObj['opportunity']);
+
+                          return OpportunityCard(item: item);
+                        },
+                        separatorBuilder: (context, index) => const SizedBox(height: 12),
+                      ),
+                    ),
+                  ],
+                );
+              },
+              loading: () => Center(
+                child: CircularProgressIndicator(color: theme.colorScheme.primary),
+              ),
+              error: (e, s) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.error_outline, size: 54, color: Colors.red),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Failed to load saved opportunities',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(e.toString(), textAlign: TextAlign.center),
+                      const SizedBox(height: 16),
+                      FilledButton(
+                        onPressed: () => ref.invalidate(savedFeedProvider),
+                        child: const Text('Try Again'),
+                      ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
+          ),
+        ],
+      ),
     );
   }
 }

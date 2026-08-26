@@ -9,4 +9,5 @@ mobile/build/
 mobile/android/key.properties
 mobile/ios/Runner/GoogleService-Info.plist
 mobile/android/app/google-services.json
+*.egg-info/
 
