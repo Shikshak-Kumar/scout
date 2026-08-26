@@ -4,7 +4,8 @@ class ApplicationItem {
   final String id;
   final String title;
   final String organization;
-  final String status; // 'Draft' | 'Applied' | 'Interviewing' | 'Offer' | 'Rejected'
+  final String
+  status; // 'Draft' | 'Applied' | 'Interviewing' | 'Offer' | 'Rejected'
   final String appliedDate;
   final String nextAction;
   final double progress; // 0.0 to 1.0
@@ -108,14 +109,19 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Applications', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: const Text(
+          'Applications',
+          style: TextStyle(fontWeight: FontWeight.w800),
+        ),
         actions: [
           IconButton(
             tooltip: 'Add new application',
             icon: const Icon(Icons.add),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Manual tracking is coming soon!')),
+                const SnackBar(
+                  content: Text('Manual tracking is coming soon!'),
+                ),
               );
             },
           ),
@@ -135,11 +141,33 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildStatItem('Total', _applications.length.toString(), colors.onPrimaryContainer),
-                  _buildStatDivider(colors.onPrimaryContainer.withValues(alpha: 0.2)),
-                  _buildStatItem('Interviewing', _applications.where((e) => e.status == 'Interviewing').length.toString(), Colors.orange),
-                  _buildStatDivider(colors.onPrimaryContainer.withValues(alpha: 0.2)),
-                  _buildStatItem('Offers', _applications.where((e) => e.status == 'Offer').length.toString(), Colors.green),
+                  _buildStatItem(
+                    'Total',
+                    _applications.length.toString(),
+                    colors.onPrimaryContainer,
+                  ),
+                  _buildStatDivider(
+                    colors.onPrimaryContainer.withValues(alpha: 0.2),
+                  ),
+                  _buildStatItem(
+                    'Interviewing',
+                    _applications
+                        .where((e) => e.status == 'Interviewing')
+                        .length
+                        .toString(),
+                    Colors.orange,
+                  ),
+                  _buildStatDivider(
+                    colors.onPrimaryContainer.withValues(alpha: 0.2),
+                  ),
+                  _buildStatItem(
+                    'Offers',
+                    _applications
+                        .where((e) => e.status == 'Offer')
+                        .length
+                        .toString(),
+                    Colors.green,
+                  ),
                 ],
               ),
             ),
@@ -151,7 +179,9 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),
               child: Text(
                 'Tracked Applications',
-                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
@@ -185,7 +215,10 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
                               ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: statusColor.withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(12),
@@ -193,7 +226,11 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(statusIcon, size: 14, color: statusColor),
+                                  Icon(
+                                    statusIcon,
+                                    size: 14,
+                                    color: statusColor,
+                                  ),
                                   const SizedBox(width: 4),
                                   Text(
                                     app.status,
@@ -211,12 +248,16 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
                         const SizedBox(height: 8),
                         Text(
                           app.title,
-                          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                         const SizedBox(height: 12),
                         LinearProgressIndicator(
                           value: app.progress,
-                          backgroundColor: colors.outlineVariant.withValues(alpha: 0.3),
+                          backgroundColor: colors.outlineVariant.withValues(
+                            alpha: 0.3,
+                          ),
                           color: statusColor,
                           borderRadius: BorderRadius.circular(4),
                           minHeight: 6,
@@ -224,18 +265,29 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
                         const SizedBox(height: 14),
                         Row(
                           children: [
-                            const Icon(Icons.calendar_today_outlined, size: 14, color: Colors.grey),
+                            const Icon(
+                              Icons.calendar_today_outlined,
+                              size: 14,
+                              color: Colors.grey,
+                            ),
                             const SizedBox(width: 6),
                             Text(
                               app.appliedDate,
-                              style: const TextStyle(fontSize: 12, color: Colors.grey),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 6),
                         Row(
                           children: [
-                            const Icon(Icons.bolt, size: 16, color: Colors.amber),
+                            const Icon(
+                              Icons.bolt,
+                              size: 16,
+                              color: Colors.amber,
+                            ),
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
@@ -288,10 +340,6 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
   }
 
   Widget _buildStatDivider(Color color) {
-    return Container(
-      height: 30,
-      width: 1,
-      color: color,
-    );
+    return Container(height: 30, width: 1, color: color);
   }
 }

@@ -28,7 +28,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
       title: 'Google Summer of Code 2026 Developer',
       organization: 'Google',
       category: 'Open Source',
-      description: 'Spend your summer contributing to open source software projects. Guided by mentors from open source organizations.',
+      description:
+          'Spend your summer contributing to open source software projects. Guided by mentors from open source organizations.',
       sourceUrl: 'https://summerofcode.withgoogle.com',
       applicationUrl: 'https://summerofcode.withgoogle.com',
       verification: 'verified',
@@ -44,7 +45,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
       title: 'MLH Fellowship (Software Engineering)',
       organization: 'Major League Hacking',
       category: 'Fellowship',
-      description: 'A remote, 12-week internship alternative for aspiring software engineers. Collaborate on open source projects with expert guidance.',
+      description:
+          'A remote, 12-week internship alternative for aspiring software engineers. Collaborate on open source projects with expert guidance.',
       sourceUrl: 'https://fellowship.mlh.io',
       applicationUrl: 'https://fellowship.mlh.io',
       verification: 'verified',
@@ -60,7 +62,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
       title: 'Autonomous Systems Intern',
       organization: 'SpaceX',
       category: 'Internship',
-      description: 'Develop flight software for Starship and Falcon rockets. Build reliable automation tools and real-time guidance algorithms.',
+      description:
+          'Develop flight software for Starship and Falcon rockets. Build reliable automation tools and real-time guidance algorithms.',
       sourceUrl: 'https://spacex.com/careers',
       applicationUrl: 'https://spacex.com/careers',
       verification: 'community_reported',
@@ -76,7 +79,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
       title: 'Outreachy Cohort Developer',
       organization: 'Outreachy',
       category: 'Open Source',
-      description: 'Outreachy provides internships in open source and free software for people typically underrepresented in tech.',
+      description:
+          'Outreachy provides internships in open source and free software for people typically underrepresented in tech.',
       sourceUrl: 'https://outreachy.org',
       applicationUrl: 'https://outreachy.org',
       verification: 'verified',
@@ -92,7 +96,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
       title: 'GitHub Externship 2026',
       organization: 'GitHub',
       category: 'Open Source',
-      description: 'Collaborate with industry leaders, build open source packages, and receive a handsome stipend while building your tech career.',
+      description:
+          'Collaborate with industry leaders, build open source packages, and receive a handsome stipend while building your tech career.',
       sourceUrl: 'https://github.com',
       applicationUrl: 'https://github.com',
       verification: 'verified',
@@ -113,9 +118,11 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
 
   List<Opportunity> get _filteredOpportunities {
     return _hardcodedOpportunities.where((opp) {
-      final matchesCategory = _selectedCategory == 'All' ||
+      final matchesCategory =
+          _selectedCategory == 'All' ||
           opp.category.toLowerCase() == _selectedCategory.toLowerCase();
-      final matchesSearch = opp.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+      final matchesSearch =
+          opp.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           opp.organization.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           opp.description.toLowerCase().contains(_searchQuery.toLowerCase());
       return matchesCategory && matchesSearch;
@@ -129,7 +136,10 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Discover', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: const Text(
+          'Discover',
+          style: TextStyle(fontWeight: FontWeight.w800),
+        ),
       ),
       body: CustomScrollView(
         slivers: [
@@ -191,14 +201,16 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               ),
             ),
           ),
-          
+
           // Section Title
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               child: Text(
                 'Explore Matches (${filtered.length})',
-                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
@@ -216,7 +228,10 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                       SizedBox(height: 16),
                       Text(
                         'No opportunities found',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       SizedBox(height: 8),
                       Text(
@@ -236,7 +251,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 itemBuilder: (context, index) {
                   return OpportunityCard(item: filtered[index]);
                 },
-                separatorBuilder: (context, index) => const SizedBox(height: 12),
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: 12),
               ),
             ),
         ],

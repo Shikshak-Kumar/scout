@@ -238,6 +238,7 @@ abstract final class ShellScope {
   static void goDiscover(BuildContext context) {
     context.go('/discover');
   }
+
   static void openOpportunity(BuildContext context, Opportunity item) {
     Navigator.of(
       context,

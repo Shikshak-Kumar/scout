@@ -67,7 +67,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: const Text(
+          'Profile',
+          style: TextStyle(fontWeight: FontWeight.w800),
+        ),
         actions: [
           IconButton(
             tooltip: 'Settings',
@@ -115,12 +118,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 16),
                 Text(
                   'Alex Developer',
-                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'alex.developer@example.com',
-                  style: theme.textTheme.bodyMedium?.copyWith(color: colors.onSurfaceVariant),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colors.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
@@ -130,11 +137,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
           // Stats Section
           Row(
             children: [
-              Expanded(child: _buildStatCard('Applied', '4', Icons.send_outlined)),
+              Expanded(
+                child: _buildStatCard('Applied', '4', Icons.send_outlined),
+              ),
               const SizedBox(width: 12),
-              Expanded(child: _buildStatCard('Saved', '3', Icons.bookmark_border)),
+              Expanded(
+                child: _buildStatCard('Saved', '3', Icons.bookmark_border),
+              ),
               const SizedBox(width: 12),
-              Expanded(child: _buildStatCard('Skills', _skills.length.toString(), Icons.bolt_outlined)),
+              Expanded(
+                child: _buildStatCard(
+                  'Skills',
+                  _skills.length.toString(),
+                  Icons.bolt_outlined,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 24),
@@ -165,7 +182,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         Text(
                           'Updated Aug 18, 2026 • 245 KB',
-                          style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: Colors.grey,
+                          ),
                         ),
                       ],
                     ),
@@ -175,7 +194,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     tooltip: 'Update Resume',
                     onPressed: () {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Resume upload system is ready!')),
+                        const SnackBar(
+                          content: Text('Resume upload system is ready!'),
+                        ),
                       );
                     },
                   ),
@@ -228,7 +249,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 SwitchListTile(
                   title: const Text('Email Alerts'),
-                  subtitle: const Text('Receive matches immediately in your inbox'),
+                  subtitle: const Text(
+                    'Receive matches immediately in your inbox',
+                  ),
                   value: _emailAlerts,
                   onChanged: (val) {
                     setState(() {
@@ -239,7 +262,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const Divider(height: 1),
                 SwitchListTile(
                   title: const Text('Push Notifications'),
-                  subtitle: const Text('Instant alerts for high-priority matches'),
+                  subtitle: const Text(
+                    'Instant alerts for high-priority matches',
+                  ),
                   value: _pushNotifications,
                   onChanged: (val) {
                     setState(() {
@@ -284,7 +309,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.logout, color: Colors.red),
-                  title: const Text('Log Out', style: TextStyle(color: Colors.red)),
+                  title: const Text(
+                    'Log Out',
+                    style: TextStyle(color: Colors.red),
+                  ),
                   onTap: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Logging out...')),

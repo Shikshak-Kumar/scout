@@ -17,7 +17,8 @@ class _SavedScreenState extends State<SavedScreen> {
       title: 'Meta Production Engineer Intern',
       organization: 'Meta',
       category: 'Internship',
-      description: 'Production engineering combines software engineering with systems engineering to build services that scale to billions.',
+      description:
+          'Production engineering combines software engineering with systems engineering to build services that scale to billions.',
       sourceUrl: 'https://meta.com/careers',
       applicationUrl: 'https://meta.com/careers',
       verification: 'verified',
@@ -33,7 +34,8 @@ class _SavedScreenState extends State<SavedScreen> {
       title: 'Research Intern (Deep Learning)',
       organization: 'Microsoft Research',
       category: 'Fellowship',
-      description: 'Collaborate with researchers to solve hard problems in generative AI, large language models, and neural architecture search.',
+      description:
+          'Collaborate with researchers to solve hard problems in generative AI, large language models, and neural architecture search.',
       sourceUrl: 'https://microsoft.com/research',
       applicationUrl: 'https://microsoft.com/research',
       verification: 'verified',
@@ -49,7 +51,8 @@ class _SavedScreenState extends State<SavedScreen> {
       title: 'Linux Foundation Kernel Mentorship',
       organization: 'Linux Foundation',
       category: 'Open Source',
-      description: 'Work directly on the Linux kernel with veteran developers. Receive hands-on mentoring and a fellowship stipend.',
+      description:
+          'Work directly on the Linux kernel with veteran developers. Receive hands-on mentoring and a fellowship stipend.',
       sourceUrl: 'https://linuxfoundation.org',
       applicationUrl: 'https://linuxfoundation.org',
       verification: 'verified',
@@ -74,7 +77,10 @@ class _SavedScreenState extends State<SavedScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Saved', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: const Text(
+          'Saved',
+          style: TextStyle(fontWeight: FontWeight.w800),
+        ),
       ),
       body: _savedOpportunities.isEmpty
           ? const Center(
@@ -87,7 +93,10 @@ class _SavedScreenState extends State<SavedScreen> {
                     SizedBox(height: 16),
                     Text(
                       'No saved opportunities yet',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     SizedBox(height: 8),
                     Text(
@@ -113,7 +122,10 @@ class _SavedScreenState extends State<SavedScreen> {
                   ),
                 ),
                 SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   sliver: SliverList.separated(
                     itemCount: _savedOpportunities.length,
                     itemBuilder: (context, index) {
@@ -126,7 +138,10 @@ class _SavedScreenState extends State<SavedScreen> {
                             top: 10,
                             right: 10,
                             child: IconButton(
-                              icon: const Icon(Icons.bookmark, color: Colors.blueAccent),
+                              icon: const Icon(
+                                Icons.bookmark,
+                                color: Colors.blueAccent,
+                              ),
                               onPressed: () {
                                 _removeSaved(index);
                                 ScaffoldMessenger.of(context).showSnackBar(
@@ -137,7 +152,10 @@ class _SavedScreenState extends State<SavedScreen> {
                                       label: 'Undo',
                                       onPressed: () {
                                         setState(() {
-                                          _savedOpportunities.insert(index, item);
+                                          _savedOpportunities.insert(
+                                            index,
+                                            item,
+                                          );
                                         });
                                       },
                                     ),
@@ -150,7 +168,8 @@ class _SavedScreenState extends State<SavedScreen> {
                         ],
                       );
                     },
-                    separatorBuilder: (context, index) => const SizedBox(height: 12),
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 12),
                   ),
                 ),
               ],
