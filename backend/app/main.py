@@ -18,13 +18,23 @@ async def lifespan(app):
 
 
 app = FastAPI(title="Scout API", version="1.0.0", lifespan=lifespan)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=get_settings().allowed_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+
+if get_settings().environment == "development":
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origin_regex="https?://.*",
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+else:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=get_settings().allowed_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 app.include_router(auth.router, prefix="/v1")
 app.include_router(opportunities.router, prefix="/v1")
 

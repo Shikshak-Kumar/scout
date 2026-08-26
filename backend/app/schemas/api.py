@@ -51,3 +51,26 @@ class FeedOut(BaseModel):
 class SavedIn(BaseModel):
     status: str = "saved"
     notes: str | None = None
+    application_date: datetime | None = None
+    interview_date: datetime | None = None
+
+
+class SavedOpportunityOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: UUID
+    opportunity_id: UUID
+    status: str
+    notes: str | None
+    application_date: datetime | None
+    interview_date: datetime | None
+    opportunity: OpportunityOut
+
+
+class ProfileOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    email: EmailStr
+    profile: dict
+
+
+class ProfileUpdateIn(BaseModel):
+    profile: dict

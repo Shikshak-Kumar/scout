@@ -39,7 +39,7 @@ class ApplicationStatus(str, enum.Enum):
 class User(Base, IdMixin, TimestampMixin):
     __tablename__ = "users"
     email: Mapped[str] = mapped_column(String(320), unique=True, index=True)
-    password_hash: Mapped[str] = mapped_column(String(255))
+    keycloak_id: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
     profile: Mapped[dict] = mapped_column(JSON, default=dict)
@@ -116,6 +116,7 @@ class SavedOpportunity(Base, IdMixin, TimestampMixin):
     application_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     interview_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     reminders: Mapped[list] = mapped_column(JSON, default=list)
+    opportunity: Mapped["Opportunity"] = relationship()
 
 
 class RefreshToken(Base, IdMixin):

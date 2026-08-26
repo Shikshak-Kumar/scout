@@ -2,9 +2,21 @@ services:
   db:
     image: pgvector/pgvector:pg16
     environment: {POSTGRES_USER: scout, POSTGRES_PASSWORD: scout, POSTGRES_DB: scout}
-    volumes: [scout_db:/var/lib/postgresql/data]
+    volumes: [scout_db:/var/lib/postgresql/data, ./init-scripts:/docker-entrypoint-initdb.d]
     healthcheck: {test: ["CMD-SHELL", "pg_isready -U scout"], interval: 5s, timeout: 5s, retries: 10}
   redis: {image: redis:7-alpine}
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.0
+    command: start-dev
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://db:5432/keycloak
+      KC_DB_USERNAME: scout
+      KC_DB_PASSWORD: scout
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports: ["8080:8080"]
+    depends_on: {db: {condition: service_healthy}}
   api:
     build: ./backend
     env_file: [.env]

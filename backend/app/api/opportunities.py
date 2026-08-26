@@ -4,10 +4,11 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select, or_, desc
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 from app.db.session import get_db
 from app.api.deps import current_user
 from app.models import Opportunity, User, SavedOpportunity
-from app.schemas.api import OpportunityOut, FeedOut, SavedIn
+from app.schemas.api import OpportunityOut, FeedOut, SavedIn, SavedOpportunityOut
 
 router = APIRouter(prefix="/opportunities", tags=["opportunities"])
 
@@ -30,6 +31,7 @@ async def feed(
     cursor: str | None = None,
     limit: int = Query(20, ge=1, le=50),
     q: str | None = None,
+    category: str | None = None,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(current_user),
 ):
@@ -42,6 +44,8 @@ async def feed(
                 Opportunity.description.ilike(f"%{q}%"),
             )
         )
+    if category:
+        stmt = stmt.where(Opportunity.category.ilike(f"%{category}%"))
     if cursor:
         dt, ident = decode_cursor(cursor)
         stmt = stmt.where(
@@ -70,6 +74,40 @@ async def feed(
         ),
         last_updated=max((x.last_seen_at for x in rows), default=None),
     )
+
+
+@router.get("/saved", response_model=list[SavedOpportunityOut])
+async def get_saved(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(current_user),
+):
+    stmt = (
+        select(SavedOpportunity)
+        .where(
+            SavedOpportunity.user_id == user.id,
+            SavedOpportunity.status == "saved",
+        )
+        .options(joinedload(SavedOpportunity.opportunity))
+    )
+    res = await db.execute(stmt)
+    return res.scalars().all()
+
+
+@router.get("/applications", response_model=list[SavedOpportunityOut])
+async def get_applications(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(current_user),
+):
+    stmt = (
+        select(SavedOpportunity)
+        .where(
+            SavedOpportunity.user_id == user.id,
+            SavedOpportunity.status != "saved",
+        )
+        .options(joinedload(SavedOpportunity.opportunity))
+    )
+    res = await db.execute(stmt)
+    return res.scalars().all()
 
 
 @router.get("/{opportunity_id}", response_model=OpportunityOut)
@@ -104,6 +142,8 @@ async def save(
     if row:
         row.status = data.status
         row.notes = data.notes
+        row.application_date = data.application_date
+        row.interview_date = data.interview_date
     else:
         db.add(
             SavedOpportunity(
@@ -111,6 +151,8 @@ async def save(
                 opportunity_id=opportunity_id,
                 status=data.status,
                 notes=data.notes,
+                application_date=data.application_date,
+                interview_date=data.interview_date,
             )
         )
     await db.commit()
