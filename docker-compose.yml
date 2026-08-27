@@ -21,7 +21,7 @@ services:
     build: ./backend
     env_file: [.env]
     ports: ["8000:8000"]
-    depends_on: {db: {condition: service_healthy}, redis: {condition: service_started}}
+    depends_on: {db: {condition: service_healthy}, redis: {condition: service_started}, keycloak: {condition: service_started}}
   worker:
     build: ./backend
     command: celery -A app.tasks.celery_app.celery worker -Q ingestion -l info
@@ -33,4 +33,3 @@ services:
     env_file: [.env]
     depends_on: [api, redis]
 volumes: {scout_db: {}}
-

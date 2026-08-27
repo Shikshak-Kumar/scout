@@ -6,29 +6,18 @@ import '../../features/discover/presentation/discover_screen.dart';
 import '../../features/saved/presentation/saved_screen.dart';
 import '../../features/applications/presentation/applications_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
-import '../../features/auth/presentation/login_screen.dart';
-import '../auth/auth_service.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final isAuth = ref.watch(authStateProvider);
-
   return GoRouter(
     initialLocation: '/home',
-    redirect: (context, state) {
-      final loggingIn = state.uri.path == '/login';
-      if (!isAuth && !loggingIn) return '/login';
-      if (isAuth && loggingIn) return '/home';
-      return null;
-    },
     routes: [
-      GoRoute(
-        path: '/login',
-        builder: (context, state) => const LoginScreen(),
-      ),
       ShellRoute(
         builder: (context, state, child) => _Shell(child: child),
         routes: [
-          GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
+          GoRoute(
+            path: '/home',
+            builder: (context, state) => const HomeScreen(),
+          ),
           GoRoute(
             path: '/discover',
             builder: (context, state) => const DiscoverScreen(),

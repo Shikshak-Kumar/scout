@@ -11,7 +11,9 @@ class ProfileScreen extends ConsumerStatefulWidget {
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void _addSkill(String skill, Map<String, dynamic> currentProfileData) {
-    final currentSkills = List<String>.from(currentProfileData['skills'] ?? ['Flutter', 'Dart', 'Python', 'Git']);
+    final currentSkills = List<String>.from(
+      currentProfileData['skills'] ?? ['Flutter', 'Dart', 'Python', 'Git'],
+    );
     if (skill.trim().isNotEmpty && !currentSkills.contains(skill.trim())) {
       final newSkills = [...currentSkills, skill.trim()];
       ref.read(profileProvider.notifier).updateProfile({
@@ -39,7 +41,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-        title: const Text('Add Skill', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Add Skill',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         content: TextField(
           controller: controller,
           decoration: const InputDecoration(
@@ -51,20 +56,28 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFFF5B5D0),
               foregroundColor: const Color(0xFF1E1E24),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(50),
+              ),
               elevation: 0,
             ),
             onPressed: () {
               _addSkill(controller.text, currentProfileData);
               Navigator.pop(context);
             },
-            child: const Text('Add', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Add',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),
@@ -75,7 +88,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    
+
     final profileAsync = ref.watch(profileProvider);
     final savedAsync = ref.watch(savedFeedProvider);
     final appsAsync = ref.watch(applicationsFeedProvider);
@@ -126,24 +139,36 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
             ),
           ),
-          
+
           // 2. Content list
           SafeArea(
             child: profileAsync.when(
               data: (profileData) {
                 final email = profileData['email'] ?? 'user@example.com';
-                final profileDetails = Map<String, dynamic>.from(profileData['profile'] ?? {});
-                
-                final skills = List<String>.from(profileDetails['skills'] ?? ['Flutter', 'Dart', 'Python', 'Git', 'Open Source']);
-                final emailAlerts = profileDetails['email_alerts'] ?? true;
-                final pushNotifications = profileDetails['push_notifications'] ?? false;
-                final weeklyDigest = profileDetails['weekly_digest'] ?? true;
-                final resumeName = profileDetails['resume_name'] ?? 'alex_resume_2026.pdf';
+                final profileDetails = Map<String, dynamic>.from(
+                  profileData['profile'] ?? {},
+                );
 
-                final initials = email.length >= 2 ? email.substring(0, 2).toUpperCase() : 'US';
+                final skills = List<String>.from(
+                  profileDetails['skills'] ??
+                      ['Flutter', 'Dart', 'Python', 'Git', 'Open Source'],
+                );
+                final emailAlerts = profileDetails['email_alerts'] ?? true;
+                final pushNotifications =
+                    profileDetails['push_notifications'] ?? false;
+                final weeklyDigest = profileDetails['weekly_digest'] ?? true;
+                final resumeName =
+                    profileDetails['resume_name'] ?? 'alex_resume_2026.pdf';
+
+                final initials = email.length >= 2
+                    ? email.substring(0, 2).toUpperCase()
+                    : 'US';
 
                 return ListView(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   children: [
                     // Header: Avatar & Main Info
                     Center(
@@ -204,11 +229,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     Row(
                       children: [
                         Expanded(
-                          child: _buildStatCard('Applied', appliedCount.toString(), Icons.send_outlined),
+                          child: _buildStatCard(
+                            'Applied',
+                            appliedCount.toString(),
+                            Icons.send_outlined,
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: _buildStatCard('Saved', savedCount.toString(), Icons.bookmark_border),
+                          child: _buildStatCard(
+                            'Saved',
+                            savedCount.toString(),
+                            Icons.bookmark_border,
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -235,7 +268,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 color: Colors.red.withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(16),
                               ),
-                              child: const Icon(Icons.picture_as_pdf, color: Colors.red),
+                              child: const Icon(
+                                Icons.picture_as_pdf,
+                                color: Colors.red,
+                              ),
                             ),
                             const SizedBox(width: 14),
                             Expanded(
@@ -244,7 +280,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 children: [
                                   Text(
                                     resumeName,
-                                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 15,
+                                    ),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
@@ -258,16 +297,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               ),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.sync_outlined, color: Color(0xFF75747C)),
+                              icon: const Icon(
+                                Icons.sync_outlined,
+                                color: Color(0xFF75747C),
+                              ),
                               tooltip: 'Update Resume',
                               onPressed: () {
                                 ref.read(profileProvider.notifier).updateProfile({
                                   ...profileDetails,
-                                  'resume_name': 'resume_updated_${DateTime.now().millisecondsSinceEpoch ~/ 1000}.pdf',
+                                  'resume_name':
+                                      'resume_updated_${DateTime.now().millisecondsSinceEpoch ~/ 1000}.pdf',
                                 });
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text('Resume meta updated successfully!'),
+                                    content: Text(
+                                      'Resume meta updated successfully!',
+                                    ),
                                   ),
                                 );
                               },
@@ -284,7 +329,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       children: [
                         _buildSectionHeader('My Interests & Skills'),
                         IconButton(
-                          icon: const Icon(Icons.add_circle_outline, size: 20, color: Color(0xFF75747C)),
+                          icon: const Icon(
+                            Icons.add_circle_outline,
+                            size: 20,
+                            color: Color(0xFF75747C),
+                          ),
                           onPressed: () => _showAddSkillDialog(profileDetails),
                           tooltip: 'Add skill',
                         ),
@@ -299,11 +348,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           children: skills.map((skill) {
                             return InputChip(
                               label: Text(skill),
-                              onDeleted: () => _removeSkill(skill, profileDetails),
+                              onDeleted: () =>
+                                  _removeSkill(skill, profileDetails),
                               backgroundColor: const Color(0xFFF7F5F2),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(50),
-                                side: const BorderSide(color: Color(0xFFEAE7E2)),
+                                side: const BorderSide(
+                                  color: Color(0xFFEAE7E2),
+                                ),
                               ),
                             );
                           }).toList(),
@@ -318,8 +370,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       child: Column(
                         children: [
                           SwitchListTile(
-                            title: const Text('Email Alerts', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                            subtitle: const Text('Receive matches immediately in your inbox', style: TextStyle(fontSize: 12)),
+                            title: const Text(
+                              'Email Alerts',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+                            subtitle: const Text(
+                              'Receive matches immediately in your inbox',
+                              style: TextStyle(fontSize: 12),
+                            ),
                             value: emailAlerts,
                             onChanged: (val) {
                               ref.read(profileProvider.notifier).updateProfile({
@@ -330,8 +391,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           ),
                           const Divider(height: 1, color: Color(0xFFEAE7E2)),
                           SwitchListTile(
-                            title: const Text('Push Notifications', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                            subtitle: const Text('Instant alerts for high-priority matches', style: TextStyle(fontSize: 12)),
+                            title: const Text(
+                              'Push Notifications',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+                            subtitle: const Text(
+                              'Instant alerts for high-priority matches',
+                              style: TextStyle(fontSize: 12),
+                            ),
                             value: pushNotifications,
                             onChanged: (val) {
                               ref.read(profileProvider.notifier).updateProfile({
@@ -342,8 +412,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           ),
                           const Divider(height: 1, color: Color(0xFFEAE7E2)),
                           SwitchListTile(
-                            title: const Text('Weekly Digest', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                            subtitle: const Text('A summary of top engineering matches', style: TextStyle(fontSize: 12)),
+                            title: const Text(
+                              'Weekly Digest',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+                            subtitle: const Text(
+                              'A summary of top engineering matches',
+                              style: TextStyle(fontSize: 12),
+                            ),
                             value: weeklyDigest,
                             onChanged: (val) {
                               ref.read(profileProvider.notifier).updateProfile({
@@ -363,30 +442,41 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       child: Column(
                         children: [
                           ListTile(
-                            leading: const Icon(Icons.help_outline, color: Color(0xFF75747C)),
-                            title: const Text('Help & Support', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                            trailing: const Icon(Icons.chevron_right, color: Color(0xFF75747C)),
-                            onTap: () {},
-                          ),
-                          const Divider(height: 1, color: Color(0xFFEAE7E2)),
-                          ListTile(
-                            leading: const Icon(Icons.info_outline, color: Color(0xFF75747C)),
-                            title: const Text('About Scout', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                            trailing: const Icon(Icons.chevron_right, color: Color(0xFF75747C)),
-                            onTap: () {},
-                          ),
-                          const Divider(height: 1, color: Color(0xFFEAE7E2)),
-                          ListTile(
-                            leading: const Icon(Icons.logout, color: Colors.red),
-                            title: const Text(
-                              'Log Out',
-                              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 15),
+                            leading: const Icon(
+                              Icons.help_outline,
+                              color: Color(0xFF75747C),
                             ),
-                            onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Bypassed environment login; logout disabled.')),
-                              );
-                            },
+                            title: const Text(
+                              'Help & Support',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+                            trailing: const Icon(
+                              Icons.chevron_right,
+                              color: Color(0xFF75747C),
+                            ),
+                            onTap: () {},
+                          ),
+                          const Divider(height: 1, color: Color(0xFFEAE7E2)),
+                          ListTile(
+                            leading: const Icon(
+                              Icons.info_outline,
+                              color: Color(0xFF75747C),
+                            ),
+                            title: const Text(
+                              'About Scout',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+                            trailing: const Icon(
+                              Icons.chevron_right,
+                              color: Color(0xFF75747C),
+                            ),
+                            onTap: () {},
                           ),
                         ],
                       ),
@@ -404,11 +494,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.error_outline, size: 54, color: Colors.red),
+                      const Icon(
+                        Icons.error_outline,
+                        size: 54,
+                        color: Colors.red,
+                      ),
                       const SizedBox(height: 16),
                       const Text(
                         'Failed to load profile',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Text(e.toString(), textAlign: TextAlign.center),
@@ -470,12 +567,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               const SizedBox(height: 8),
               Text(
                 value,
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: -0.5),
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.5,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
                 label,
-                style: const TextStyle(fontSize: 11, color: Color(0xFF75747C), fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: Color(0xFF75747C),
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),
