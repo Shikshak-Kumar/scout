@@ -5,5 +5,4 @@ from app.models.entities import (
     RawRecord,
     Opportunity,
     SavedOpportunity,
-    RefreshToken,
 )

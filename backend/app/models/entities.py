@@ -117,13 +117,3 @@ class SavedOpportunity(Base, IdMixin, TimestampMixin):
     interview_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     reminders: Mapped[list] = mapped_column(JSON, default=list)
     opportunity: Mapped["Opportunity"] = relationship()
-
-
-class RefreshToken(Base, IdMixin):
-    __tablename__ = "refresh_tokens"
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"), index=True
-    )
-    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
-    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

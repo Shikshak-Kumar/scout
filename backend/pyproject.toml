@@ -5,7 +5,7 @@ requires-python = ">=3.11"
 dependencies = [
   "fastapi>=0.116", "uvicorn[standard]>=0.35", "sqlalchemy[asyncio]>=2.0.43",
   "asyncpg>=0.30", "alembic>=1.16", "pydantic-settings>=2.10", "email-validator>=2.2",
-  "pyjwt>=2.10", "pwdlib[argon2]>=0.2", "httpx>=0.28", "feedparser>=6.0",
+  "httpx>=0.28", "feedparser>=6.0",
   "celery[redis]>=5.5", "redis>=6.4", "pgvector>=0.4", "python-multipart>=0.0.20",
   "python-dateutil>=2.9", "structlog>=25.4"
 ]
@@ -14,4 +14,3 @@ test = ["pytest>=8.4", "pytest-asyncio>=1.1", "respx>=0.22"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 pythonpath = ["."]
-

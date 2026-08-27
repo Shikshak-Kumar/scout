@@ -6,7 +6,7 @@ from sqlalchemy import select, or_, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 from app.db.session import get_db
-from app.api.deps import current_user
+from app.api.deps import development_user
 from app.models import Opportunity, User, SavedOpportunity
 from app.schemas.api import OpportunityOut, FeedOut, SavedIn, SavedOpportunityOut
 
@@ -33,7 +33,7 @@ async def feed(
     q: str | None = None,
     category: str | None = None,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(current_user),
+    user: User = Depends(development_user),
 ):
     stmt = select(Opportunity).where(Opportunity.is_expired.is_(False))
     if q:
@@ -79,7 +79,7 @@ async def feed(
 @router.get("/saved", response_model=list[SavedOpportunityOut])
 async def get_saved(
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(current_user),
+    user: User = Depends(development_user),
 ):
     stmt = (
         select(SavedOpportunity)
@@ -96,7 +96,7 @@ async def get_saved(
 @router.get("/applications", response_model=list[SavedOpportunityOut])
 async def get_applications(
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(current_user),
+    user: User = Depends(development_user),
 ):
     stmt = (
         select(SavedOpportunity)
@@ -114,7 +114,7 @@ async def get_applications(
 async def detail(
     opportunity_id: UUID,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(current_user),
+    user: User = Depends(development_user),
 ):
     value = await db.get(Opportunity, opportunity_id)
     if not value:
@@ -127,7 +127,7 @@ async def save(
     opportunity_id: UUID,
     data: SavedIn,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(current_user),
+    user: User = Depends(development_user),
 ):
     if not await db.get(Opportunity, opportunity_id):
         raise HTTPException(404, "Opportunity not found")

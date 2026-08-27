@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/opportunities/presentation/opportunity.dart';
-import '../auth/auth_service.dart';
 
 final dioProvider = Provider<Dio>((ref) {
   const base = String.fromEnvironment(
@@ -13,40 +12,6 @@ final dioProvider = Provider<Dio>((ref) {
       baseUrl: base,
       connectTimeout: const Duration(seconds: 15),
       receiveTimeout: const Duration(seconds: 20),
-    ),
-  );
-  dio.interceptors.add(
-    InterceptorsWrapper(
-      onRequest: (options, handler) async {
-        final token = await storage.read(key: 'access_token');
-        if (token != null) options.headers['Authorization'] = 'Bearer $token';
-        handler.next(options);
-      },
-      onError: (error, handler) async {
-        if (error.response?.statusCode == 401) {
-          final refreshed = await ref
-              .read(authStateProvider.notifier)
-              .refreshToken();
-          if (refreshed) {
-            // Retry the request with the new token
-            final token = await storage.read(key: 'access_token');
-            error.requestOptions.headers['Authorization'] = 'Bearer $token';
-            final cloneReq = await dio.request(
-              error.requestOptions.path,
-              options: Options(
-                method: error.requestOptions.method,
-                headers: error.requestOptions.headers,
-              ),
-              data: error.requestOptions.data,
-              queryParameters: error.requestOptions.queryParameters,
-            );
-            return handler.resolve(cloneReq);
-          } else {
-            await ref.read(authStateProvider.notifier).logout();
-          }
-        }
-        handler.next(error);
-      },
     ),
   );
   return dio;

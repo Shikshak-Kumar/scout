@@ -24,7 +24,7 @@ This repository currently provides the first production-oriented vertical slice:
 - Saved opportunity and application-status persistence.
 - Docker Compose services for local development.
 
-The Flutter authentication screens, full onboarding, OAuth, Firebase Cloud Messaging, resume processing, embeddings, advanced recommendation ranking, and admin dashboard are not yet implemented. These features require further development and, in several cases, operator-owned credentials.
+The Flutter client uses Keycloak for OAuth/OIDC authentication, with Google configured as a Keycloak identity provider. Full onboarding, Firebase Cloud Messaging, resume processing, embeddings, advanced recommendation ranking, and admin dashboard are not yet implemented. These features require further development and, in several cases, operator-owned credentials.
 
 ## Repository structure
 
@@ -107,6 +107,8 @@ SCOUT_REDIS_URL=redis://redis:6379/0
 SCOUT_JWT_SECRET=replace-with-at-least-32-random-characters
 SCOUT_GITHUB_TOKEN=
 SCOUT_ALLOWED_ORIGINS=["http://localhost:3000"]
+SCOUT_KEYCLOAK_ISSUER=http://localhost:8080/realms/scout
+SCOUT_KEYCLOAK_JWKS_URL=http://keycloak:8080/realms/scout/protocol/openid-connect/certs
 ```
 
 Replace `SCOUT_JWT_SECRET` with a strong random value. One way to generate it is:
@@ -116,6 +118,32 @@ openssl rand -hex 32
 ```
 
 Do not commit `.env`. It may contain database passwords, signing secrets, API credentials, and other sensitive values.
+
+### Google sign-in through Keycloak
+
+The mobile app starts from Scout's own login screen. When the user taps Google, the app sends an OIDC login request to Keycloak with `kc_idp_hint=google`, so Keycloak immediately forwards the user to Google instead of showing Keycloak's own username/password page. Keycloak still remains the auth manager: it brokers Google login, issues the app tokens, and FastAPI verifies those Keycloak tokens.
+
+On mobile, this secure OIDC flow opens a system browser, Chrome Custom Tab, or Safari auth session. That is expected for a Keycloak-brokered login. Apps that show a more native Google account popup are usually using Google's mobile SDK directly, without Keycloak as the broker.
+
+In Keycloak admin, configure:
+
+- Realm: `scout`
+- Public client: `scout-mobile`
+- Client redirect URI: `scout://oauthredirect`
+- Web redirect URI, if using Flutter web: your local web app origin
+- Identity provider: Google, alias `google`
+
+Run Flutter with URLs that the device can actually reach:
+
+```bash
+cd mobile
+flutter pub get
+flutter run \
+  --dart-define=API_BASE_URL=http://YOUR_COMPUTER_LAN_IP:8000/v1 \
+  --dart-define=KEYCLOAK_ISSUER=http://YOUR_COMPUTER_LAN_IP:8080/realms/scout
+```
+
+For a physical phone, do not use `localhost` in `KEYCLOAK_ISSUER` or `API_BASE_URL`. On a phone, `localhost` points to the phone itself, not your development machine. Use your computer's LAN IP for local testing, or use a real HTTPS domain in production. Set `SCOUT_KEYCLOAK_ISSUER` in the backend `.env` to the same issuer URL that the app uses.
 
 ### GitHub token
 
@@ -137,6 +165,7 @@ This starts:
 |---|---|---|
 | `db` | PostgreSQL 16 with pgvector | Internal Docker network |
 | `redis` | Cache and Celery broker | Internal Docker network |
+| `keycloak` | OAuth/OIDC identity broker and auth manager | `http://localhost:8080` |
 | `api` | FastAPI application | `http://localhost:8000` |
 | `worker` | Celery ingestion worker | Internal Docker network |
 | `beat` | Celery scheduled-job dispatcher | Internal Docker network |
@@ -266,34 +295,16 @@ docker compose logs -f api worker beat
 
 ## Authentication and API usage
 
-The opportunity API requires a valid access token.
+The opportunity API requires a valid Keycloak access token. Flutter obtains that token through the Keycloak/Google OIDC flow, stores it securely, and sends it as a bearer token on API requests.
 
-Register a development user:
-
-```bash
-curl -X POST http://localhost:8000/v1/auth/register \
-  -H 'Content-Type: application/json' \
-  -d '{"email":"you@example.com","password":"use-a-strong-password"}'
-```
-
-The response contains an access token and refresh token. Access tokens are short-lived. Refresh tokens are stored as hashes in PostgreSQL and rotated whenever they are used.
-
-Fetch opportunities using the returned access token:
+Fetch opportunities using a Keycloak access token:
 
 ```bash
 curl http://localhost:8000/v1/opportunities \
   -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
 ```
 
-Refresh a session:
-
-```bash
-curl -X POST http://localhost:8000/v1/auth/refresh \
-  -H 'Content-Type: application/json' \
-  -d '{"refresh_token":"YOUR_REFRESH_TOKEN"}'
-```
-
-The current Flutter client does not yet include registration and login screens. Consequently, launching the client without first placing a valid token in secure storage results in an authentication error on the feed. Completing the Flutter authentication flow is required for a normal end-user sign-in experience.
+FastAPI verifies the token signature using Keycloak's JWKS endpoint, validates the configured issuer, and creates a local `User` row the first time a valid Keycloak subject calls the API.
 
 ## Run Flutter on Chrome
 
@@ -308,7 +319,8 @@ Then launch Chrome:
 
 ```bash
 flutter run -d chrome \
-  --dart-define=API_BASE_URL=http://localhost:8000/v1
+  --dart-define=API_BASE_URL=http://localhost:8000/v1 \
+  --dart-define=KEYCLOAK_ISSUER=http://localhost:8080/realms/scout
 ```
 
 Flutter prints the local web URL in the terminal. Hot reload is available while the process remains running.
@@ -324,7 +336,8 @@ For a predictable web port, use:
 ```bash
 flutter run -d chrome \
   --web-port=3000 \
-  --dart-define=API_BASE_URL=http://localhost:8000/v1
+  --dart-define=API_BASE_URL=http://localhost:8000/v1 \
+  --dart-define=KEYCLOAK_ISSUER=http://localhost:8080/realms/scout
 ```
 
 The default `.env.example` already permits `http://localhost:3000`.
@@ -336,10 +349,11 @@ Start an Android emulator, then run:
 ```bash
 cd /Users/ashmitaluthra/Documents/scout/mobile
 flutter run \
-  --dart-define=API_BASE_URL=http://10.0.2.2:8000/v1
+  --dart-define=API_BASE_URL=http://10.0.2.2:8000/v1 \
+  --dart-define=KEYCLOAK_ISSUER=http://10.0.2.2:8080/realms/scout
 ```
 
-Android emulators use `10.0.2.2` to access services running on the host computer. A physical device must use the Mac's local network address instead, and both devices must be reachable on the same network.
+Android emulators use `10.0.2.2` to access services running on the host computer. A physical device must use the Mac's local network address instead, and both devices must be reachable on the same network. When you change `KEYCLOAK_ISSUER`, set backend `SCOUT_KEYCLOAK_ISSUER` to the same issuer value before restarting the API.
 
 ## Run Flutter on iOS
 
@@ -348,7 +362,8 @@ Start an iOS Simulator, then run:
 ```bash
 cd /Users/ashmitaluthra/Documents/scout/mobile
 flutter run \
-  --dart-define=API_BASE_URL=http://localhost:8000/v1
+  --dart-define=API_BASE_URL=http://localhost:8000/v1 \
+  --dart-define=KEYCLOAK_ISSUER=http://localhost:8080/realms/scout
 ```
 
 For a physical iPhone, use the Mac's local network address and configure the required iOS networking permissions for development. Production builds must communicate with an HTTPS endpoint.
@@ -360,9 +375,8 @@ The current API is versioned under `/v1`.
 | Method | Endpoint | Purpose |
 |---|---|---|
 | `GET` | `/health` | Service health check |
-| `POST` | `/v1/auth/register` | Create an email/password account |
-| `POST` | `/v1/auth/login` | Authenticate an existing account |
-| `POST` | `/v1/auth/refresh` | Rotate a refresh token and issue a new token pair |
+| `GET` | `/v1/auth/me` | Return the current Keycloak-authenticated profile |
+| `PATCH` | `/v1/auth/me` | Update the current profile |
 | `GET` | `/v1/opportunities` | Return an authenticated cursor-paginated feed |
 | `GET` | `/v1/opportunities/{id}` | Return an opportunity detail record |
 | `PUT` | `/v1/opportunities/{id}/saved` | Save an opportunity or update its application status |
