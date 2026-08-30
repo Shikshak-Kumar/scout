@@ -5,7 +5,7 @@ import '../../features/opportunities/presentation/opportunity.dart';
 final dioProvider = Provider<Dio>((ref) {
   const base = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://localhost:8000/v1',
+    defaultValue: 'http://localhost:8000',
   );
   final dio = Dio(
     BaseOptions(
