@@ -1,9 +1,16 @@
 # Scout
 
-Scout is a mobile-first opportunity discovery platform for students, developers, researchers, job seekers, and early-career professionals. It consists of two separate applications:
+Scout is a mobile-first opportunity discovery platform for students, developers, researchers, job seekers, and early-career professionals. 
 
-- A Flutter client for Android, iOS, and optionally the web.
-- A FastAPI backend responsible for authentication, source ingestion, normalization, storage, and opportunity APIs.
+The backend is architected as **independently deployable microservices** instead of a monolith:
+
+- **API Gateway**: Public entrypoint with rate limiting, JWT validation, routing, and CORS
+- **Auth Service**: User identity, JWT issuance, token refresh rotation
+- **Opportunity Service**: Opportunity search, bookmark reads/writes (Postgres + Elasticsearch)
+- **Ingestion Service**: Source adapters, scraper orchestration, deduplication
+- **Notification Service**: Event consumption and notification matching
+
+Each service owns its own PostgreSQL database, has a health endpoint, and runs independently in Docker. Redis and RabbitMQ provide shared caching and event pub/sub.
 
 Scout does not seed or display invented production opportunities. Every production record must originate from a configured, permitted source and retain a verifiable source URL.
 
@@ -11,48 +18,93 @@ Scout does not seed or display invented production opportunities. Every producti
 
 This repository currently provides the first production-oriented vertical slice:
 
-- Material 3 Flutter interface with light and dark themes.
-- Home, Discover, Saved, Applications, and Profile navigation.
-- Live opportunity feed and opportunity details backed by the API.
-- FastAPI email/password registration and login endpoints.
-- Short-lived JWT access tokens and rotating, hashed refresh tokens.
-- PostgreSQL persistence with the pgvector extension.
-- Redis and Celery background-job infrastructure.
-- Auditable raw source records separated from normalized opportunities.
-- GitHub official API and RSS/Atom source adapters.
-- Cursor-based opportunity pagination.
-- Saved opportunity and application-status persistence.
-- Docker Compose services for local development.
+- Material 3 Flutter interface with light and dark themes (mobile app)
+- Home, Discover, Saved, Applications, and Profile navigation
+- Live opportunity feed and opportunity details
+- Email/password registration and JWT-based authentication
+- Short-lived JWT access tokens and rotating, hashed refresh tokens
+- Per-service PostgreSQL persistence (SQLAlchemy + Alembic migrations)
+- Redis and RabbitMQ infrastructure for caching and event pub/sub
+- GitHub official API adapter for source ingestion
+- Cursor-based opportunity pagination
+- Saved opportunity and bookmark persistence
+- Docker Compose services for local development and testing
+- Simple email/password authentication with JWT tokens
 
-The Flutter client uses Keycloak for OAuth/OIDC authentication, with Google configured as a Keycloak identity provider. Full onboarding, Firebase Cloud Messaging, resume processing, embeddings, advanced recommendation ranking, and admin dashboard are not yet implemented. These features require further development and, in several cases, operator-owned credentials.
+Full onboarding, Firebase Cloud Messaging, OAuth/OIDC integration, resume processing, embeddings, advanced recommendation ranking, and admin dashboard are not yet implemented.
 
 ## Repository structure
 
 ```text
 scout/
-├── backend/
-│   ├── app/
-│   │   ├── api/                 # FastAPI routes and authentication dependencies
-│   │   ├── core/                # Environment configuration and security helpers
-│   │   ├── db/                  # Async SQLAlchemy session setup
-│   │   ├── ingestion/           # Source adapter contract and integrations
-│   │   │   └── adapters/        # GitHub and RSS/Atom adapters
-│   │   ├── models/              # PostgreSQL/SQLAlchemy models
-│   │   ├── schemas/             # API request and response schemas
-│   │   ├── services/            # Ingestion orchestration
-│   │   ├── tasks/               # Celery workers and scheduled jobs
-│   │   └── main.py              # FastAPI application entry point
-│   ├── tests/
-│   ├── Dockerfile
-│   └── pyproject.toml
+├── services/
+│   ├── api-gateway/
+│   │   ├── app/
+│   │   │   ├── api/
+│   │   │   │   └── router.py          # Public routes, auth validation, routing
+│   │   │   ├── core/
+│   │   │   │   └── config.py          # Gateway configuration
+│   │   │   └── main.py                # FastAPI application
+│   │   ├── Dockerfile
+│   │   └── pyproject.toml
+│   ├── auth-service/
+│   │   ├── app/
+│   │   │   ├── api/
+│   │   │   │   └── routes.py          # Signup, login, token refresh, verification
+│   │   │   ├── infra/
+│   │   │   │   ├── auth.py            # JWT token issuance and validation
+│   │   │   │   └── persistence.py     # User repository and password hashing
+│   │   │   ├── core/
+│   │   │   │   └── config.py          # Auth service configuration
+│   │   │   └── main.py
+│   │   ├── tests/
+│   │   ├── Dockerfile
+│   │   └── pyproject.toml
+│   ├── opportunity-service/
+│   │   ├── app/
+│   │   │   ├── api/
+│   │   │   │   └── routes.py          # Opportunity list, detail, bookmarks
+│   │   │   ├── infra/
+│   │   │   │   └── repositories.py    # Opportunity and bookmark persistence
+│   │   │   ├── core/
+│   │   │   │   └── config.py
+│   │   │   └── main.py
+│   │   ├── tests/
+│   │   ├── Dockerfile
+│   │   └── pyproject.toml
+│   ├── ingestion-service/
+│   │   ├── app/
+│   │   │   ├── api/
+│   │   │   │   └── routes.py          # Ingestion endpoint
+│   │   │   ├── infra/
+│   │   │   │   └── broker.py          # RabbitMQ event publishing
+│   │   │   ├── core/
+│   │   │   │   └── config.py
+│   │   │   └── main.py
+│   │   ├── tests/
+│   │   ├── Dockerfile
+│   │   └── pyproject.toml
+│   └── notification-service/
+│       ├── app/
+│       │   ├── api/
+│       │   │   └── routes.py          # Notification listing and preferences
+│       │   ├── infra/
+│       │   │   └── broker.py          # RabbitMQ event consumption
+│       │   ├── core/
+│       │   │   └── config.py
+│       │   └── main.py
+│       ├── tests/
+│       ├── Dockerfile
+│       └── pyproject.toml
 ├── mobile/
 │   ├── android/
 │   ├── ios/
 │   ├── lib/
-│   │   ├── core/                # Networking, routing, storage, and theme
+│   │   ├── core/                # Networking, routing, storage, theme
 │   │   └── features/            # Feature-first Flutter modules
 │   ├── test/
 │   └── pubspec.yaml
+├── init-scripts/                 # Database initialization scripts
 ├── docker-compose.yml
 ├── .env.example
 └── README.md
@@ -94,62 +146,42 @@ docker info
 From the repository root, create the local environment file:
 
 ```bash
-cd /Users/ashmitaluthra/Documents/scout
 cp .env.example .env
 ```
 
-The default development configuration is:
+The default development configuration includes individual service ports and database URLs. Each microservice has its own dedicated PostgreSQL database:
 
 ```dotenv
-SCOUT_ENVIRONMENT=development
-SCOUT_DATABASE_URL=postgresql+asyncpg://scout:scout@db:5432/scout
-SCOUT_REDIS_URL=redis://redis:6379/0
-SCOUT_JWT_SECRET=replace-with-at-least-32-random-characters
-SCOUT_GITHUB_TOKEN=
-SCOUT_ALLOWED_ORIGINS=["http://localhost:3000"]
-SCOUT_KEYCLOAK_ISSUER=http://localhost:8080/realms/scout
-SCOUT_KEYCLOAK_JWKS_URL=http://keycloak:8080/realms/scout/protocol/openid-connect/certs
+# API Gateway (public entrypoint)
+GATEWAY_PORT=8000
+GATEWAY_AUTH_SERVICE_URL=http://auth-service:8001
+GATEWAY_OPPORTUNITY_SERVICE_URL=http://opportunity-service:8002
+GATEWAY_INGESTION_SERVICE_URL=http://ingestion-service:8003
+GATEWAY_NOTIFICATION_SERVICE_URL=http://notification-service:8004
+
+# Auth Service
+APP_DATABASE_URL=postgresql+asyncpg://scout:scout@auth-db:5432/auth_service
+
+# Opportunity Service
+APP_DATABASE_URL=postgresql+asyncpg://scout:scout@opportunity-db:5432/opportunity_service
+ELASTICSEARCH_URL=http://elasticsearch:9200
+
+# Ingestion Service
+APP_DATABASE_URL=postgresql+asyncpg://scout:scout@ingestion-db:5432/ingestion_service
+BROKER_URL=amqp://guest:guest@rabbitmq:5672/
+GITHUB_TOKEN=
+
+# Notification Service
+APP_DATABASE_URL=postgresql+asyncpg://scout:scout@notification-db:5432/notification_service
+BROKER_URL=amqp://guest:guest@rabbitmq:5672/
+
+# Shared Infrastructure
+REDIS_URL=redis://redis:6379/0
+LOG_LEVEL=INFO
+CORS_ORIGINS=["http://localhost:3000","http://localhost:8000"]
 ```
 
-Replace `SCOUT_JWT_SECRET` with a strong random value. One way to generate it is:
-
-```bash
-openssl rand -hex 32
-```
-
-Do not commit `.env`. It may contain database passwords, signing secrets, API credentials, and other sensitive values.
-
-### Google sign-in through Keycloak
-
-The mobile app starts from Scout's own login screen. When the user taps Google, the app sends an OIDC login request to Keycloak with `kc_idp_hint=google`, so Keycloak immediately forwards the user to Google instead of showing Keycloak's own username/password page. Keycloak still remains the auth manager: it brokers Google login, issues the app tokens, and FastAPI verifies those Keycloak tokens.
-
-On mobile, this secure OIDC flow opens a system browser, Chrome Custom Tab, or Safari auth session. That is expected for a Keycloak-brokered login. Apps that show a more native Google account popup are usually using Google's mobile SDK directly, without Keycloak as the broker.
-
-In Keycloak admin, configure:
-
-- Realm: `scout`
-- Public client: `scout-mobile`
-- Client redirect URI: `scout://oauthredirect`
-- Web redirect URI, if using Flutter web: your local web app origin
-- Identity provider: Google, alias `google`
-
-Run Flutter with URLs that the device can actually reach:
-
-```bash
-cd mobile
-flutter pub get
-flutter run \
-  --dart-define=API_BASE_URL=http://YOUR_COMPUTER_LAN_IP:8000/v1 \
-  --dart-define=KEYCLOAK_ISSUER=http://YOUR_COMPUTER_LAN_IP:8080/realms/scout
-```
-
-For a physical phone, do not use `localhost` in `KEYCLOAK_ISSUER` or `API_BASE_URL`. On a phone, `localhost` points to the phone itself, not your development machine. Use your computer's LAN IP for local testing, or use a real HTTPS domain in production. Set `SCOUT_KEYCLOAK_ISSUER` in the backend `.env` to the same issuer URL that the app uses.
-
-### GitHub token
-
-The GitHub adapter uses GitHub's official REST API. It can make unauthenticated requests, but those requests have lower rate limits. Set `SCOUT_GITHUB_TOKEN` to an appropriate GitHub token for regular ingestion.
-
-The token must remain on the backend. Never embed it in Flutter, JavaScript, or a public build artifact.
+Do not commit `.env`. It may contain database passwords, API credentials, and other sensitive values.
 
 ## Start the backend stack
 
@@ -159,20 +191,34 @@ Run this command from the repository root:
 docker compose up --build
 ```
 
-This starts:
+This starts all services and infrastructure:
 
 | Service | Purpose | Local access |
 |---|---|---|
-| `db` | PostgreSQL 16 with pgvector | Internal Docker network |
-| `redis` | Cache and Celery broker | Internal Docker network |
-| `keycloak` | OAuth/OIDC identity broker and auth manager | `http://localhost:8080` |
-| `api` | FastAPI application | `http://localhost:8000` |
-| `worker` | Celery ingestion worker | Internal Docker network |
-| `beat` | Celery scheduled-job dispatcher | Internal Docker network |
+| `auth-service` | User authentication and JWT issuance | Internal |
+| `opportunity-service` | Opportunity search and bookmarks | Internal |
+| `ingestion-service` | Source adapters and ingestion | Internal |
+| `notification-service` | Notification matching and delivery | Internal |
+| `api-gateway` | Public API entrypoint | `http://localhost:8000` |
+| `auth-db` | Auth service PostgreSQL | Internal |
+| `opportunity-db` | Opportunity service PostgreSQL | Internal |
+| `ingestion-db` | Ingestion service PostgreSQL | Internal |
+| `notification-db` | Notification service PostgreSQL | Internal |
+| `redis` | Shared cache and session store | Internal |
+| `rabbitmq` | Event message broker | `http://localhost:15672` |
+| `elasticsearch` | Full-text search (optional) | `http://localhost:9200` |
 
 The first build can take several minutes. Keep this terminal open while using Scout.
 
-Verify the API from another terminal:
+Verify each service's health from another terminal:
+
+```bash
+curl http://localhost:8000/health              # API Gateway
+curl http://auth-service:8001/health           # Auth Service (internal)
+curl http://opportunity-service:8002/health    # Opportunity Service (internal)
+```
+
+The Gateway health check is the public entrypoint:
 
 ```bash
 curl http://localhost:8000/health
@@ -181,7 +227,7 @@ curl http://localhost:8000/health
 Expected response:
 
 ```json
-{"status":"ok"}
+{"status":"ok","service":"api-gateway"}
 ```
 
 FastAPI's interactive development documentation is available at:
@@ -195,7 +241,7 @@ Stop the services with `Ctrl+C`. To stop detached services, run:
 docker compose down
 ```
 
-The database uses a named Docker volume, so ordinary `docker compose down` does not erase stored records.
+Each service uses named Docker volumes, so ordinary `docker compose down` does not erase stored records in the databases.
 
 ## Configure opportunity sources
 
@@ -430,25 +476,19 @@ Then launch Chrome:
 
 ```bash
 flutter run -d chrome \
-  --dart-define=API_BASE_URL=http://localhost:8000/v1 \
-  --dart-define=KEYCLOAK_ISSUER=http://localhost:8080/realms/scout
+  --dart-define=API_BASE_URL=http://localhost:8000
 ```
 
 Flutter prints the local web URL in the terminal. Hot reload is available while the process remains running.
 
-If the browser origin is rejected by CORS, add the exact Flutter web origin to `SCOUT_ALLOWED_ORIGINS` in `.env`, then restart the API:
-
-```bash
-docker compose restart api
-```
+If the browser origin is rejected by CORS, add the exact Flutter web origin to `CORS_ORIGINS` in `.env`, then restart the API gateway.
 
 For a predictable web port, use:
 
 ```bash
 flutter run -d chrome \
   --web-port=3000 \
-  --dart-define=API_BASE_URL=http://localhost:8000/v1 \
-  --dart-define=KEYCLOAK_ISSUER=http://localhost:8080/realms/scout
+  --dart-define=API_BASE_URL=http://localhost:8000
 ```
 
 The default `.env.example` already permits `http://localhost:3000`.
@@ -460,11 +500,10 @@ Start an Android emulator, then run:
 ```bash
 cd /Users/ashmitaluthra/Documents/scout/mobile
 flutter run \
-  --dart-define=API_BASE_URL=http://10.0.2.2:8000/v1 \
-  --dart-define=KEYCLOAK_ISSUER=http://10.0.2.2:8080/realms/scout
+  --dart-define=API_BASE_URL=http://10.0.2.2:8000
 ```
 
-Android emulators use `10.0.2.2` to access services running on the host computer. A physical device must use the Mac's local network address instead, and both devices must be reachable on the same network. When you change `KEYCLOAK_ISSUER`, set backend `SCOUT_KEYCLOAK_ISSUER` to the same issuer value before restarting the API.
+Android emulators use `10.0.2.2` to access services running on the host computer. A physical device must use the Mac's local network address instead, and both devices must be reachable on the same network.
 
 ## Run Flutter on iOS
 
@@ -473,8 +512,7 @@ Start an iOS Simulator, then run:
 ```bash
 cd /Users/ashmitaluthra/Documents/scout/mobile
 flutter run \
-  --dart-define=API_BASE_URL=http://localhost:8000/v1 \
-  --dart-define=KEYCLOAK_ISSUER=http://localhost:8080/realms/scout
+  --dart-define=API_BASE_URL=http://localhost:8000
 ```
 
 For a physical iPhone, use the Mac's local network address and configure the required iOS networking permissions for development. Production builds must communicate with an HTTPS endpoint.
@@ -561,79 +599,116 @@ lsof -i :8000
 docker ps
 ```
 
-Stop the conflicting process, or change the API port mapping in `docker-compose.yml` and update `API_BASE_URL` accordingly.
+Stop the conflicting process, or change the gateway port mapping in `docker-compose.yml` and update your API base URL accordingly.
 
-### Flutter shows a retry button instead of opportunities
+### Service fails to start or crashes immediately
 
-Check all of the following:
-
-- The API health endpoint responds.
-- The browser is using the correct `API_BASE_URL`.
-- CORS permits the browser's exact origin.
-- A valid access token exists in Flutter Secure Storage.
-- At least one source is enabled and has synchronized successfully.
-- The source actually returned records that passed opportunity classification.
-
-Use these logs for backend diagnosis:
+Check the logs for all services:
 
 ```bash
-docker compose logs -f api worker beat
+docker compose logs <service-name>
 ```
 
-### The feed is empty
+Common issues:
+- Database is not running or credentials are wrong
+- RabbitMQ or Redis connectivity issues
+- Missing environment variables in `.env`
+- Port conflicts with other containers
 
-An empty feed is valid when no real opportunities have been ingested. Scout does not substitute fake cards. Inspect registered sources and recent records:
+### Tests fail with import errors
+
+Ensure PYTHONPATH includes all service directories:
 
 ```bash
-docker compose exec db psql -U scout -d scout \
-  -c "SELECT name, adapter, health, last_success_at, error FROM sources;"
-
-docker compose exec db psql -U scout -d scout \
-  -c "SELECT title, organization, source_url, first_seen_at FROM opportunities ORDER BY first_seen_at DESC LIMIT 20;"
+cd /Users/shikshakkumar/Downloads/development/scout
+source .venv/bin/activate
+export PYTHONPATH=services/auth-service:services/opportunity-service:services/ingestion-service:services/notification-service
+pytest services/*/tests -q
 ```
 
-## Security and source policy
+## Security
 
-- Passwords are hashed using Argon2 through `pwdlib`.
-- Access tokens are short-lived JWTs.
-- Refresh tokens are random, hashed server-side, rotated on use, and revocable.
-- Mobile credentials are stored using Flutter Secure Storage.
+- Passwords are hashed using PBKDF2 with 200,000 iterations and random salt.
+- Access tokens are short-lived JWTs signed with RSA 2048.
+- Refresh tokens are random, hashed server-side, and rotated on use.
+- Mobile credentials are stored in secure storage provided by the OS.
 - Backend secrets are loaded from environment variables.
-- Raw and normalized source records remain separate for auditability.
-- GitHub ingestion uses GitHub's official API.
-- RSS ingestion uses explicitly configured public feeds.
-- Scout must not bypass authentication, CAPTCHAs, rate limits, robots restrictions, or source access controls.
-- A source should only be marked authoritative when it belongs to the publishing organization.
-- Production deployments must use HTTPS, a strong JWT secret, restricted CORS origins, private infrastructure, and separately managed credentials.
+- Service-to-service communication is internal only in development; production requires mTLS or private networking.
+- Each service owns its database and does not access other services' data directly.
+- Events flow through a message broker (RabbitMQ) for loose coupling.
 
-## Production considerations
+## Production deployment
 
-The Compose setup is intended for local development. Before production deployment:
+The Docker Compose setup is for local development. Before production:
 
-- Use a managed or properly backed-up PostgreSQL/pgvector database.
-- Use durable Redis infrastructure with authentication and network restrictions.
-- Run database migrations instead of development-time `create_all` behavior.
-- Deploy API, workers, scheduler, and notification workers independently.
-- Put the API behind TLS and a reverse proxy or managed load balancer.
-- Restrict CORS to known application origins.
-- Store secrets in a dedicated secrets manager.
-- Configure structured logs, metrics, traces, uptime checks, and alerting.
-- Apply per-source rate limits and monitor source health.
-- Configure Firebase, email, object storage, and embedding providers separately.
-- Add Android and iOS release signing and distinct development, staging, and production environments.
+### Infrastructure
+- Use managed PostgreSQL databases or properly backed-up self-hosted instances per service.
+- Use managed Redis or properly secured self-hosted Redis with authentication.
+- Use managed RabbitMQ or properly configured self-hosted broker with TLS.
+- Run Elasticsearch on dedicated hardware or managed service.
+- Use a load balancer in front of the API Gateway.
+- Put all services behind a private network or VPN.
 
-Production Flutter builds must never use `localhost` as their API base URL.
+### Deployment
+- Deploy each service independently (Kubernetes, Cloud Run, ECS, etc.).
+- Use container orchestration for scaling, health checks, and rolling updates.
+- Implement distributed tracing and logging aggregation.
+- Set up monitoring, alerting, and uptime checks for all services.
+- Use TLS/HTTPS for all external communication.
 
-## Adding another source adapter
+### Configuration
+- Load secrets from a dedicated secrets manager (AWS Secrets Manager, Vault, etc.).
+- Use strong, randomly generated JWT secrets unique to the environment.
+- Restrict CORS to known application origins only.
+- Configure strict rate limiting on the API Gateway.
+- Implement request authentication and authorization consistently.
+- Set up structured logging with correlation IDs.
 
-New integrations implement the `SourceAdapter` contract in `backend/app/ingestion/base.py`:
+### Application
+- Run database migrations before deploying services.
+- Implement graceful shutdown and connection draining.
+- Use connection pooling for database access.
+- Monitor service health endpoints continuously.
+- Implement circuit breakers for inter-service calls.
+- Use exponential backoff for retries.
 
-- `fetch()` retrieves permitted source records incrementally.
-- `parse()` converts a raw source item into a normalized candidate or rejects it.
-- `validate()` verifies required fields and safe source URLs.
-- `identify()` returns the stable source identifier used for incremental ingestion.
+### Mobile
+- Use distinct development, staging, and production API endpoints.
+- Implement certificate pinning for production HTTPS connections.
+- Add Android and iOS app signing certificates.
+- Use Firebase Cloud Messaging for production notifications.
+- Implement in-app update mechanisms.
 
-Add the adapter implementation under `backend/app/ingestion/adapters/`, register it in `adapter_for()` in `backend/app/tasks/ingestion.py`, and add isolated mocked tests. Never add static JSON as a production source or silently replace unavailable integrations with invented records.
+## Adding new services
+
+To add a new microservice to the architecture:
+
+1. Create a new directory under `services/`:
+   ```bash
+   mkdir -p services/my-service/app/{api,core,infra}
+   ```
+
+2. Add `pyproject.toml` with dependencies and `app/main.py` for the FastAPI app.
+
+3. Create the service config in `app/core/config.py` using Pydantic Settings.
+
+4. Add routes in `app/api/` with health checks.
+
+5. Create infrastructure (database, broker, etc.) in `app/infra/`.
+
+6. Add tests in a `tests/` directory.
+
+7. Create a `Dockerfile` following the pattern of existing services.
+
+8. Add the service to `docker-compose.yml` with:
+   - Environment variables
+   - Port mapping
+   - Database if needed
+   - Health check
+
+9. Update the API Gateway to route to the new service.
+
+10. Update this README with the new service's purpose and port.
 
 ## License
 
