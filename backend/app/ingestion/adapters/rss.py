@@ -31,13 +31,22 @@ class RSSAdapter(SourceAdapter):
         published = None
         if p.get("published_parsed"):
             published = datetime(*p["published_parsed"][:6], tzinfo=timezone.utc)
+        
+        # Extract application URL from links if available
+        application_url = None
+        if p.get("links"):
+            for link in p.get("links", []):
+                if link.get("rel") == "alternate" and link.get("type") == "text/html":
+                    application_url = link.get("href")
+                    break
+        
         return NormalizedItem(
             p.get("title", "").strip(),
             self.name,
             "general",
             p.get("summary", "")[:12000],
             item.source_url,
-            item.source_url,
+            application_url,  # Only set if we found a real application link
             published,
             structured={"feed_url": self.url},
         )

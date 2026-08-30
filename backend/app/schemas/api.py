@@ -1,6 +1,6 @@
 from datetime import datetime
 from uuid import UUID
-from pydantic import BaseModel, ConfigDict, EmailStr, HttpUrl
+from pydantic import BaseModel, ConfigDict
 
 
 class OpportunityOut(BaseModel):
@@ -48,7 +48,7 @@ class SavedOpportunityOut(BaseModel):
 
 class ProfileOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    email: EmailStr
+    email: str
     profile: dict
 
 

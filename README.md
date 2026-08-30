@@ -293,18 +293,129 @@ Inspect service logs with:
 docker compose logs -f api worker beat
 ```
 
-## Authentication and API usage
+## Data accuracy and sources
 
-The opportunity API requires a valid Keycloak access token. Flutter obtains that token through the Keycloak/Google OIDC flow, stores it securely, and sends it as a bearer token on API requests.
+Scout's data quality depends entirely on the sources you configure. Each opportunity stored in Scout retains a `source_url` (where it was found) and an optional `application_url` (where to actually apply). 
 
-Fetch opportunities using a Keycloak access token:
+**Common data issues:**
+
+- **404 on "Apply on official site"**: This happens when the RSS feed or source does not provide a direct link to the opportunity's application page. In this case, click "View source link" to see the original announcement and locate the real application URL manually.
+- **404 on "View source link"**: The feed URL itself is broken or no longer accessible. Check that the source URL in the database is correct and the feed is still being updated.
+- **Missing application URLs**: RSS and general web sources often only provide announcement links, not direct application links. GitHub sources are better because they link directly to the issue/discussion where you can apply.
+
+**To add more sources:** 
+
+Open a PostgreSQL shell and insert additional sources:
 
 ```bash
-curl http://localhost:8000/v1/opportunities \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+docker compose exec db psql -U scout -d scout
 ```
 
-FastAPI verifies the token signature using Keycloak's JWKS endpoint, validates the configured issuer, and creates a local `User` row the first time a valid Keycloak subject calls the API.
+Example: Add Google Summer of Code:
+
+```sql
+INSERT INTO sources (
+  id, name, adapter, base_url, enabled, authoritative, cursor, health, created_at, updated_at
+) VALUES (
+  gen_random_uuid(),
+  'Google Summer of Code',
+  'rss',
+  'https://summerofcode.withgoogle.com/feed',
+  true,
+  true,
+  '{}'::json,
+  'not_connected',
+  now(),
+  now()
+)
+ON CONFLICT (name) DO NOTHING;
+```
+
+**Recommended official sources:**
+- GitHub Issues with opportunity keywords (already configured)
+- Google Summer of Code RSS
+- MLH (Major League Hacking) feeds
+- University career office RSS feeds
+- Professional organization opportunity feeds (IEEE, ACM, etc.)
+
+For the best data quality, prioritize **authoritative sources** (set `authoritative=true`) that publish opportunities directly, rather than aggregators that repost from others.
+
+## No-auth local API usage
+
+Authentication is disabled for local development. The backend automatically creates or reuses a local dev user and all endpoints work without any Authorization header or token.
+
+### Quick health check
+
+```bash
+curl http://localhost:8000/health
+```
+
+Expected response:
+
+```json
+{"status":"ok"}
+```
+
+### Auth endpoints
+
+```bash
+curl http://localhost:8000/v1/auth/me
+curl -X PATCH http://localhost:8000/v1/auth/me \
+  -H 'Content-Type: application/json' \
+  -d '{"profile":{"name":"Local Developer","role":"tester"}}'
+```
+
+### Opportunities feed
+
+```bash
+curl 'http://localhost:8000/v1/opportunities?limit=5'
+curl 'http://localhost:8000/v1/opportunities?limit=5&q=internship'
+curl 'http://localhost:8000/v1/opportunities?limit=5&category=internship'
+curl 'http://localhost:8000/v1/opportunities?limit=5&cursor=' 
+```
+
+### Opportunity detail
+
+```bash
+curl 'http://localhost:8000/v1/opportunities/00000000-0000-0000-0000-000000000000'
+```
+
+If you already have a valid opportunity UUID, replace the placeholder above with it.
+
+### Saved opportunities
+
+```bash
+curl http://localhost:8000/v1/opportunities/saved
+curl http://localhost:8000/v1/opportunities/applications
+```
+
+### Save or update a saved item
+
+```bash
+curl -X PUT http://localhost:8000/v1/opportunities/<opportunity_id>/saved \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "status": "saved",
+    "notes": "Interested in this role",
+    "application_date": null,
+    "interview_date": null
+  }'
+```
+
+### Update an application status
+
+```bash
+curl -X PUT http://localhost:8000/v1/opportunities/<opportunity_id>/saved \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "status": "applied",
+    "notes": "Submitted application",
+    "application_date": "2026-08-30T12:00:00Z",
+    "interview_date": null
+  }'
+```
+
+The backend uses the local dev user automatically, so you do not need a token or Authorization header for these requests.
 
 ## Run Flutter on Chrome
 
@@ -375,9 +486,9 @@ The current API is versioned under `/v1`.
 | Method | Endpoint | Purpose |
 |---|---|---|
 | `GET` | `/health` | Service health check |
-| `GET` | `/v1/auth/me` | Return the current Keycloak-authenticated profile |
-| `PATCH` | `/v1/auth/me` | Update the current profile |
-| `GET` | `/v1/opportunities` | Return an authenticated cursor-paginated feed |
+| `GET` | `/v1/auth/me` | Return the local dev profile used for testing |
+| `PATCH` | `/v1/auth/me` | Update the current dev profile |
+| `GET` | `/v1/opportunities` | Return a cursor-paginated opportunity feed |
 | `GET` | `/v1/opportunities/{id}` | Return an opportunity detail record |
 | `PUT` | `/v1/opportunities/{id}/saved` | Save an opportunity or update its application status |
 

@@ -39,7 +39,10 @@ class ApplicationStatus(str, enum.Enum):
 class User(Base, IdMixin, TimestampMixin):
     __tablename__ = "users"
     email: Mapped[str] = mapped_column(String(320), unique=True, index=True)
-    keycloak_id: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    password_hash: Mapped[str] = mapped_column(String(255), default="dev-user-password")
+    keycloak_id: Mapped[str | None] = mapped_column(
+        String(255), unique=True, index=True, nullable=True
+    )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
     profile: Mapped[dict] = mapped_column(JSON, default=dict)
