@@ -1,4 +1,20 @@
 services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: scout-keycloak
+
+    command: start-dev
+
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+
+    ports:
+      - "8080:8080"
+
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+      
   redis:
     image: redis:7-alpine
     ports:
@@ -9,50 +25,6 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
-
-  auth-db:
-    image: postgres:16
-    environment:
-      POSTGRES_DB: auth_service
-      POSTGRES_USER: scout
-      POSTGRES_PASSWORD: scout
-    ports:
-      - "5433:5432"
-    volumes:
-      - auth_db_data:/var/lib/postgresql/data
-
-  opportunity-db:
-    image: pgvector/pgvector:pg16
-    environment:
-      POSTGRES_DB: opportunity_service
-      POSTGRES_USER: scout
-      POSTGRES_PASSWORD: scout
-    ports:
-      - "5434:5432"
-    volumes:
-      - opportunity_db_data:/var/lib/postgresql/data
-
-  ingestion-db:
-    image: postgres:16
-    environment:
-      POSTGRES_DB: ingestion_service
-      POSTGRES_USER: scout
-      POSTGRES_PASSWORD: scout
-    ports:
-      - "5435:5432"
-    volumes:
-      - ingestion_db_data:/var/lib/postgresql/data
-
-  notification-db:
-    image: postgres:16
-    environment:
-      POSTGRES_DB: notification_service
-      POSTGRES_USER: scout
-      POSTGRES_PASSWORD: scout
-    ports:
-      - "5436:5432"
-    volumes:
-      - notification_db_data:/var/lib/postgresql/data
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
@@ -71,8 +43,10 @@ services:
       OPPORTUNITY_SERVICE_URL: http://opportunity-service:8002
       INGESTION_SERVICE_URL: http://ingestion-service:8003
       NOTIFICATION_SERVICE_URL: http://notification-service:8004
-      REDIS_URL: redis://redis:6379/0
-      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+      REDIS_URL: ${REDIS_URL}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+      LOG_LEVEL: ${LOG_LEVEL}
+      CORS_ORIGINS: ${CORS_ORIGINS}
     ports:
       - "8000:8000"
     depends_on:
@@ -87,25 +61,25 @@ services:
     build: ./services/auth-service
     environment:
       APP_ENV: development
-      DATABASE_URL: postgresql+asyncpg://scout:scout@auth-db:5432/auth_service
-      REDIS_URL: redis://redis:6379/0
+      DATABASE_URL: ${AUTH_DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      LOG_LEVEL: ${LOG_LEVEL}
     ports:
       - "8001:8001"
     depends_on:
-      - auth-db
       - redis
 
   opportunity-service:
     build: ./services/opportunity-service
     environment:
       APP_ENV: development
-      DATABASE_URL: postgresql+asyncpg://scout:scout@opportunity-db:5432/opportunity_service
-      ELASTICSEARCH_URL: http://elasticsearch:9200
-      REDIS_URL: redis://redis:6379/0
+      DATABASE_URL: ${OPPORTUNITY_DATABASE_URL}
+      ELASTICSEARCH_URL: ${ELASTICSEARCH_URL}
+      REDIS_URL: ${REDIS_URL}
+      LOG_LEVEL: ${LOG_LEVEL}
     ports:
       - "8002:8002"
     depends_on:
-      - opportunity-db
       - redis
       - elasticsearch
 
@@ -113,14 +87,15 @@ services:
     build: ./services/ingestion-service
     environment:
       APP_ENV: development
-      DATABASE_URL: postgresql+asyncpg://scout:scout@ingestion-db:5432/ingestion_service
-      REDIS_URL: redis://redis:6379/0
-      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+      DATABASE_URL: ${INGESTION_DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      RABBITMQ_URL: ${RABBITMQ_URL}
       OPPORTUNITY_SERVICE_URL: http://opportunity-service:8002
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+      LOG_LEVEL: ${LOG_LEVEL}
     ports:
       - "8003:8003"
     depends_on:
-      - ingestion-db
       - rabbitmq
       - opportunity-service
 
@@ -128,17 +103,17 @@ services:
     build: ./services/notification-service
     environment:
       APP_ENV: development
-      DATABASE_URL: postgresql+asyncpg://scout:scout@notification-db:5432/notification_service
-      REDIS_URL: redis://redis:6379/0
-      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+      DATABASE_URL: ${NOTIFICATION_DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+      LOG_LEVEL: ${LOG_LEVEL}
     ports:
       - "8004:8004"
     depends_on:
-      - notification-db
       - rabbitmq
 
 volumes:
-  auth_db_data: {}
-  opportunity_db_data: {}
-  ingestion_db_data: {}
-  notification_db_data: {}
+  keycloak_data:
+
+
+  
