@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'auth_service.dart';
 import 'auth_service_mobile.dart';
 import 'secure_storage.dart';
+import 'auth_service_factory.dart';
 
 // Web import is conditional — only compiled when targeting web.
 import 'auth_service_web.dart'
@@ -13,11 +14,8 @@ import 'auth_service_web.dart'
 ///  • kIsWeb  →  [WebAuthService]  (dart:html popup + HTTP token exchange)
 ///  • mobile  →  [MobileAuthService] (flutter_appauth Chrome Custom Tabs / SFSafariViewController)
 final authServiceProvider = Provider<AuthService>((ref) {
-  final storage = ref.watch(secureStorageProvider);
-  if (kIsWeb) {
-    return WebAuthService(storage);
-  }
-  return MobileAuthService(storage);
+  final storage = SecureTokenStorage();
+  return createAuthService(storage);
 });
 
 // ---------------------------------------------------------------------------

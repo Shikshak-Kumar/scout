@@ -148,3 +148,7 @@ Future<bool> _login(String provider) async {
   @override
   Future<AuthToken?> getToken() => _storage.loadToken();
 }
+
+AuthService createPlatformAuthService(SecureTokenStorage storage) {
+  return MobileAuthService(storage);
+}

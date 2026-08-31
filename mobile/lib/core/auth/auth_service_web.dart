@@ -278,3 +278,6 @@ Future<bool> _login(String provider) async {
   return base64Url.encode(bytes).replaceAll('=', '');
 }
 }
+AuthService createPlatformAuthService(SecureTokenStorage storage) {
+  return WebAuthService(storage);
+}
