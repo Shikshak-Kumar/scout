@@ -1,15 +1,24 @@
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="APP_", extra="ignore")
+# opportunity-service/app/core/config.py
+# Go up three levels:
+# app/core -> app -> opportunity-service -> services -> scout
+ROOT_DIR = Path(__file__).resolve().parents[4]
 
-    app_env: str = "development"
-    database_url: str = "postgresql+asyncpg://scout:scout@opportunity-db:5432/opportunity_service"
-    elasticsearch_url: str = "http://elasticsearch:9200"
-    jwt_public_key: str | None = None
+ENV_FILE = ROOT_DIR / ".env"
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=ENV_FILE,
+        extra="ignore",
+    )
+
+    opportunity_database_url: str
 
 
 @lru_cache
