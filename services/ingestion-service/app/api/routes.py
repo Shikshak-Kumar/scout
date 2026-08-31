@@ -18,6 +18,16 @@ async def ingest_greenhouse():
     }
 
 
+@router.post("/ingest/workday")
+async def ingest_workday():
+    results = await ingestion_service.ingest_workday()
+
+    return {
+        "status": "completed",
+        "results": results,
+    }
+
+
 @router.get("/sources")
 async def sources():
     return {"status": "ok", "items": []}

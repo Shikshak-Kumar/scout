@@ -20,3 +20,27 @@ def normalize_greenhouse_job(
         "first_published_at": job.get("first_published"),
         "is_active": True,
     }
+
+def normalize_workday_job(
+    job: dict,
+    source: dict,
+) -> dict:
+    external_path = job.get("externalPath", "")
+
+    return {
+        "external_id": (
+            f"workday_{source['tenant']}_{external_path}"
+        ),
+        "source": "workday",
+        "source_job_id": external_path,
+        "company": source.get("company"),
+        "title": job.get("title"),
+        "location": job.get("locationsText"),
+        "external_url": (
+            f"https://{source['host']}"
+            f"/{source['site']}"
+            f"{external_path}"
+        ),
+        "posted_at": job.get("postedOn"),
+        "is_active": True,
+    }
