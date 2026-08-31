@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Authenticating...</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f0f14;
+      color: #e0e0e0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid rgba(255,255,255,0.1);
+      border-top-color: #6366f1;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    p { font-size: 14px; opacity: 0.6; margin: 0; }
+  </style>
+</head>
+<body>
+  <div class="spinner"></div>
+  <p>Completing sign-in…</p>
+  <script>
+    (function () {
+      // Parse the query string returned by Keycloak
+      var params = new URLSearchParams(window.location.search);
+      var code  = params.get('code');
+      var state = params.get('state');
+      var error = params.get('error');
+
+      var message = {
+        type:  'oauth_callback',
+        code:  code,
+        state: state,
+        error: error,
+      };
+
+      // Send the authorization code back to the Flutter app window.
+      // targetOrigin is the same origin (the Flutter web app).
+      if (window.opener && !window.opener.closed) {
+        window.opener.postMessage(message, window.location.origin);
+      }
+
+      // Close this popup automatically.
+      window.close();
+    })();
+  </script>
+</body>
+</html>

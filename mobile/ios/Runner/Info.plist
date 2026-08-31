@@ -45,5 +45,22 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+
+	<!--
+	  flutter_appauth: Register the custom URL scheme so iOS can handle
+	  the OAuth redirect com.scoutapp.scout_mobile:/oauthredirect
+	  returned by Keycloak after Google authentication.
+	-->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.scoutapp.scout_mobile</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
