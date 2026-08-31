@@ -1,47 +1,23 @@
-from __future__ import annotations
+from fastapi import APIRouter
 
-from pydantic import BaseModel, Field
-from fastapi import APIRouter, HTTPException
+from app.domain.ingestion_service import IngestionDomainService
 
-from app.infra.broker import BrokerClient
 
 router = APIRouter()
-broker = BrokerClient()
+
+ingestion_service = IngestionDomainService()
 
 
-class IngestRequest(BaseModel):
-    source: str = Field(..., min_length=1)
-    title: str = Field(..., min_length=1)
-    company: str | None = None
-    location: str | None = None
-    salary: str | None = None
-    external_url: str | None = None
-
-
-@router.post("/ingest")
-async def ingest(payload: IngestRequest) -> dict[str, object]:
-    event_payload = {
-        "opportunity_id": f"opportunity-{payload.source.lower().replace(' ', '-')}-{abs(hash(payload.title))}",
-        "source": payload.source,
-        "title": payload.title,
-        "company": payload.company,
-        "location": payload.location,
-        "salary": payload.salary,
-        "external_url": payload.external_url,
-    }
-
-    published = broker.publish("opportunity.created", event_payload)
-    if not published:
-        raise HTTPException(status_code=503, detail="broker unavailable")
+@router.post("/ingest/greenhouse")
+async def ingest_greenhouse():
+    results = await ingestion_service.ingest_greenhouse()
 
     return {
-        "status": "queued",
-        "service": "ingestion-service",
-        "broker_published": True,
-        "opportunity_id": event_payload["opportunity_id"],
+        "status": "completed",
+        "results": results,
     }
 
 
 @router.get("/sources")
-async def sources() -> dict[str, list]:
+async def sources():
     return {"status": "ok", "items": []}
