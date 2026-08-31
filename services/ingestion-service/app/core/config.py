@@ -1,15 +1,22 @@
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="APP_", extra="ignore")
+ROOT_DIR = Path(__file__).resolve().parents[4]
 
-    app_env: str = "development"
-    database_url: str = "postgresql+asyncpg://scout:scout@ingestion-db:5432/ingestion_service"
-    rabbitmq_url: str = "amqp://guest:guest@rabbitmq:5672/"
-    opportunity_service_url: str = "http://opportunity-service:8002"
+ENV_FILE = ROOT_DIR / ".env"
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=ENV_FILE,
+        extra="ignore",
+    )
+
+    app_env: str
+    ingestion_database_url: str
 
 
 @lru_cache

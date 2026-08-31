@@ -1,44 +1,35 @@
+from app.infra.database import db
+
+
 class OpportunityRepository:
-    def __init__(self) -> None:
-        self._items = [
-            {
-                "id": "demo-opportunity-1",
-                "title": "Senior Python Engineer",
-                "company": "Northstar Labs",
-                "location": "Remote",
-                "salary": "$140k - $180k",
-            },
-            {
-                "id": "demo-opportunity-2",
-                "title": "Data Engineer",
-                "company": "Signal Forge",
-                "location": "Austin, TX",
-                "salary": "$120k - $155k",
-            },
-        ]
-        self._bookmarks: dict[str, dict] = {}
+    def __init__(self):
+        self.collection = db["opportunities"]
 
     async def list(self):
-        return self._items
+        opportunities = []
+
+        cursor = self.collection.find({})
+
+        async for opportunity in cursor:
+            opportunity["id"] = str(opportunity["_id"])
+            del opportunity["_id"]
+            opportunities.append(opportunity)
+
+        return opportunities
 
     async def get_by_id(self, opportunity_id: str):
-        for item in self._items:
-            if item["id"] == opportunity_id:
-                return item
-        return None
+        from bson import ObjectId
 
-    async def list_bookmarks(self):
-        return list(self._bookmarks.values())
+        try:
+            opportunity = await self.collection.find_one(
+                {"_id": ObjectId(opportunity_id)}
+            )
 
-    async def add_bookmark(self, opportunity_id: str):
-        item = await self.get_by_id(opportunity_id)
-        if item is None:
+            if opportunity:
+                opportunity["id"] = str(opportunity["_id"])
+                del opportunity["_id"]
+
+            return opportunity
+
+        except Exception:
             return None
-        self._bookmarks[opportunity_id] = {"opportunity_id": opportunity_id, **item}
-        return self._bookmarks[opportunity_id]
-
-    async def remove_bookmark(self, opportunity_id: str):
-        if opportunity_id in self._bookmarks:
-            del self._bookmarks[opportunity_id]
-            return True
-        return False

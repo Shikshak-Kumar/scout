@@ -40,3 +40,27 @@ async def delete_bookmark(opportunity_id: str) -> dict[str, object]:
 async def list_bookmarks() -> dict[str, object]:
     items = await repository.list_bookmarks()
     return {"status": "ok", "items": items}
+
+@router.post("/seed")
+async def seed_opportunities():
+    opportunities = [
+        {
+            "title": "Senior Python Engineer",
+            "company": "Northstar Labs",
+            "location": "Remote",
+            "salary": "$140k - $180k",
+        },
+        {
+            "title": "Data Engineer",
+            "company": "Signal Forge",
+            "location": "Austin, TX",
+            "salary": "$120k - $155k",
+        },
+    ]
+
+    result = await repository.collection.insert_many(opportunities)
+
+    return {
+        "status": "ok",
+        "inserted": len(result.inserted_ids),
+    }
