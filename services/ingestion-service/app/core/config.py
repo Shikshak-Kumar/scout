@@ -15,6 +15,10 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    ingestion_port: int
+    ingestion_host: str
+    ingestion_database_url: str
+    github_token: str
     app_env: str
     ingestion_database_url: str
     serper_api_key: str
