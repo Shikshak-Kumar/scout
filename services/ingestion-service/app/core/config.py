@@ -17,6 +17,7 @@ class Settings(BaseSettings):
 
     app_env: str
     ingestion_database_url: str
+    serper_api_key: str
 
 
 @lru_cache

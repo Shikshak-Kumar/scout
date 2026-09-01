@@ -4,10 +4,8 @@ from app.infra.opportunity_repository import OpportunityRepository
 from app.scrapers.greenhouse import GreenhouseScraper
 from app.scrapers.workday import WorkdayScraper
 
-from app.scrapers.normalizer import (
-    normalize_greenhouse_job,
-    normalize_workday_job,
-)
+from app.normalizers.greenhouse import normalize_greenhouse_job
+from app.normalizers.workday import normalize_workday_job
 
 
 class IngestionDomainService:
@@ -39,7 +37,7 @@ class IngestionDomainService:
                     )
 
                     await self.opportunity_repository.upsert(
-                        opportunity
+                        opportunity.model_dump()
                     )
 
                     saved_count += 1
@@ -86,7 +84,7 @@ class IngestionDomainService:
                     )
 
                     await self.opportunity_repository.upsert(
-                        opportunity
+                        opportunity.model_dump()
                     )
 
                     saved_count += 1
