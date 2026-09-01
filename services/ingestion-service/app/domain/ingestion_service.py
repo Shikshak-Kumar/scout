@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from app.infra.source_repository import SourceRepository
 from app.infra.opportunity_repository import OpportunityRepository
 
@@ -21,6 +23,8 @@ class IngestionDomainService:
         results = []
 
         for source in sources:
+            ingestion_started_at = datetime.now(timezone.utc)
+
             scraper = GreenhouseScraper(
                 source["board_token"]
             )
@@ -37,15 +41,25 @@ class IngestionDomainService:
                     )
 
                     await self.opportunity_repository.upsert(
-                        opportunity.model_dump()
+                        opportunity.model_dump(),
+                        ingestion_started_at,
                     )
 
                     saved_count += 1
+
+                inactive_count = (
+                    await self.opportunity_repository.mark_stale_jobs_inactive(
+                        source="greenhouse",
+                        company=source["company"],
+                        ingestion_started_at=ingestion_started_at,
+                    )
+                )
 
                 results.append({
                     "company": source["company"],
                     "jobs_found": len(jobs),
                     "jobs_saved": saved_count,
+                    "jobs_marked_inactive": inactive_count,
                     "status": "success",
                 })
 
@@ -66,6 +80,8 @@ class IngestionDomainService:
         results = []
 
         for source in sources:
+            ingestion_started_at = datetime.now(timezone.utc)
+
             scraper = WorkdayScraper(
                 host=source["host"],
                 tenant=source["tenant"],
@@ -84,15 +100,25 @@ class IngestionDomainService:
                     )
 
                     await self.opportunity_repository.upsert(
-                        opportunity.model_dump()
+                        opportunity.model_dump(),
+                        ingestion_started_at,
                     )
 
                     saved_count += 1
+
+                inactive_count = (
+                    await self.opportunity_repository.mark_stale_jobs_inactive(
+                        source="workday",
+                        company=source["company"],
+                        ingestion_started_at=ingestion_started_at,
+                    )
+                )
 
                 results.append({
                     "company": source["company"],
                     "jobs_found": len(jobs),
                     "jobs_saved": saved_count,
+                    "jobs_marked_inactive": inactive_count,
                     "status": "success",
                 })
 
