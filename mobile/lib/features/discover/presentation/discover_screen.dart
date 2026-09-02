@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/network/api.dart';
-import '../../opportunities/presentation/opportunity.dart';
+import '../../opportunities/opportunity_providers.dart';
+import '../../opportunities/presentation/opportunity_card.dart';
 
 class DiscoverScreen extends ConsumerStatefulWidget {
   const DiscoverScreen({super.key});

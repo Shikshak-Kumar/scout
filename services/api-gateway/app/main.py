@@ -1,24 +1,33 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.router import router
+from app.api.routes import router
 
-app = FastAPI(title="API Gateway", version="1.0.0")
+
+app = FastAPI(
+    title="Scout API Gateway",
+)
+
+# Allow Flutter Web (and any browser-based client) to reach the API.
+# In production, replace "*" with your actual frontend origins.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.include_router(router)
 
 
-@app.get("/health")
-async def health() -> dict[str, str]:
-    return {"status": "ok"}
+app.include_router(
+    router,
+    prefix="/api",
+)
 
 
 @app.get("/")
-async def root() -> dict[str, str]:
-    return {"service": "api-gateway", "status": "ok"}
+async def root():
+    return {
+        "service": "api-gateway",
+        "status": "ok",
+    }

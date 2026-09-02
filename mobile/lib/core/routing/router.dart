@@ -3,10 +3,10 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
-import '../../features/discover/presentation/discover_screen.dart';
 import '../../features/saved/presentation/saved_screen.dart';
 import '../../features/applications/presentation/applications_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
+import '../../features/opportunities/presentation/opportunities_screen.dart';
 import '../auth/auth_provider.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -15,16 +15,17 @@ final routerProvider = Provider<GoRouter>((ref) {
     // Redirect unauthenticated users to /login.
     // Called on every navigation; GoRouter re-runs this when the listenable fires.
     redirect: (context, state) {
-      final authAsync = ref.read(authStateProvider);
+      // TEMPORARILY DISABLED: Login Page Bypass
+      // final authAsync = ref.read(authStateProvider);
 
-      // While checking auth, don't redirect yet.
-      if (authAsync.isLoading) return null;
+      // // While checking auth, don't redirect yet.
+      // if (authAsync.isLoading) return null;
 
-      final isAuthenticated = authAsync.valueOrNull ?? false;
-      final onLoginPage = state.matchedLocation == '/login';
+      // final isAuthenticated = authAsync.valueOrNull ?? false;
+      // final onLoginPage = state.matchedLocation == '/login';
 
-      if (!isAuthenticated && !onLoginPage) return '/login';
-      if (isAuthenticated && onLoginPage) return '/home';
+      // if (!isAuthenticated && !onLoginPage) return '/login';
+      // if (isAuthenticated && onLoginPage) return '/home';
       return null;
     },
     // Refresh the router when auth state changes.
@@ -43,7 +44,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/discover',
-            builder: (context, state) => const DiscoverScreen(),
+            builder: (context, state) => const OpportunitiesScreen(),
           ),
           GoRoute(
             path: '/saved',
