@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/network/api.dart';
-import '../../opportunities/presentation/opportunity.dart';
+import '../../opportunities/opportunity.dart';
+import '../../opportunities/opportunity_providers.dart';
 
 class ApplicationsScreen extends ConsumerWidget {
   const ApplicationsScreen({super.key});

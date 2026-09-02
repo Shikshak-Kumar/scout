@@ -9,7 +9,7 @@ class ServiceClient:
 
     async def get(self, path: str, *, params: dict | None = None, headers: dict | None = None):
         try:
-            async with httpx.AsyncClient(timeout=5.0) as client:
+            async with httpx.AsyncClient(timeout=15.0) as client:
                 response = await client.get(f"{self.base_url}{path}", params=params, headers=headers)
                 response.raise_for_status()
                 return response.json()
@@ -18,8 +18,17 @@ class ServiceClient:
 
     async def post(self, path: str, *, json: dict | None = None, headers: dict | None = None):
         try:
-            async with httpx.AsyncClient(timeout=5.0) as client:
+            async with httpx.AsyncClient(timeout=15.0) as client:
                 response = await client.post(f"{self.base_url}{path}", json=json, headers=headers)
+                response.raise_for_status()
+                return response.json()
+        except httpx.HTTPError as exc:
+            return {"status": "degraded", "service": self.base_url, "error": str(exc)}
+
+    async def delete(self, path: str, *, headers: dict | None = None):
+        try:
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                response = await client.delete(f"{self.base_url}{path}", headers=headers)
                 response.raise_for_status()
                 return response.json()
         except httpx.HTTPError as exc:

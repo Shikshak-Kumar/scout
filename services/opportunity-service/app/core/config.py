@@ -4,21 +4,32 @@ from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-# opportunity-service/app/core/config.py
-# Go up three levels:
-# app/core -> app -> opportunity-service -> services -> scout
-ROOT_DIR = Path(__file__).resolve().parents[4]
+# Resolve the service root directory portably:
+#   config.py  ->  app/core/config.py
+#   parents[0] ->  app/core/
+#   parents[1] ->  app/
+#   parents[2] ->  opportunity-service/  <-- service root (same on local & Docker)
+_SERVICE_ROOT = Path(__file__).resolve().parents[2]
 
-ENV_FILE = ROOT_DIR / ".env"
+# Load .env from the service root when present (local dev).
+# In Docker the file won't exist and env vars come from docker-compose instead.
+ENV_FILE = _SERVICE_ROOT / ".env"
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=ENV_FILE,
+        env_file=str(ENV_FILE) if ENV_FILE.exists() else None,
+        env_file_encoding="utf-8",
         extra="ignore",
     )
 
-    opportunity_database_url: str
+    # MongoDB connection string
+    opportunity_database_url: str = ""
+
+    # Infrastructure
+    elasticsearch_url: str = ""
+    redis_url: str = ""
+    app_env: str = "development"
 
 
 @lru_cache
